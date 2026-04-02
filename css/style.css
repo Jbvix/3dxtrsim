@@ -1,0 +1,276 @@
+/* ====================== RESET & LAYOUT GERAL ====================== */
+  :root{color-scheme:dark}
+  body{margin:0;background:#0e1217;color:#fff;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; overflow: hidden;}
+  #app{position:relative;width:100vw;height:100vh}
+
+  /* ====================== UTILITÁRIOS ====================== */
+
+  .flex-between { display: flex; justify-content: space-between; }
+  .flex-grow { flex-grow: 1; }
+  
+  .popup-panel {
+    position: absolute;
+    background: #000000aa;
+    padding: 8px;
+    border-radius: 12px;
+    display: grid;
+    gap: 10px;
+    z-index: 10;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border: 1px solid #444;
+    resize: both;
+    overflow: auto;
+    min-width: 280px;
+  }
+  #panel-asd-2d { top: 10px; left: 10px; width: fit-content; max-width: 95vw; display: none; }
+  #panel-mooring { top: 10px; left: 450px; width: 300px; display: none; }
+  #panel-maneuvers { top: 10px; left: 770px; width: 300px; display: none; }
+  #panel-adjustments { top: 250px; left: 10px; width: 420px; display: none; }
+  #panel-views { top: 280px; left: 450px; width: 300px; display: none; }
+  #panel-environment { top: 280px; left: 770px; width: 300px; display: none; }
+  #panel-editor { top: 550px; left: 770px; width: 300px; display: none; }
+  #panel-buoys { top: 420px; left: 450px; width: 300px; display: none; }
+  .winch-control { display: none; margin-top: 10px; }
+  .tension-gauge { margin-top: 5px; }
+  .section-title { text-align: center; font-weight: 500; font-size: 14px; margin-bottom: 10px; }
+  .section-subtitle { text-align: center; font-size: 12px; opacity: 0.7; padding-top: 10px; border-top: 1px solid #333; margin-top: 5px; }
+  .full-width { width: 100%; }
+
+  .panel-header {
+    background-color: #2a2d34;
+    color: #fff;
+    padding: 6px 10px;
+    margin: -8px -8px 0 -8px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    cursor: move;
+    -webkit-user-select: none;
+    user-select: none;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  label{font-size:13px;opacity:.95; white-space: nowrap;}
+  .val{font-family:ui-monospace,Consolas,Menlo;background:#151a22;padding:2px 6px;border-radius:6px}
+  input[type="range"]{width:100%}
+  input[type="text"]{padding:6px; border-radius:6px; border:1px solid #3a3f47; background:#151a22; color:#fff; width: 100%; box-sizing: border-box;}
+  button{padding:8px 12px;border-radius:8px;border:0;background:#0d6efd;color:#fff;cursor:pointer; transition: background-color 0.2s;}
+  button:hover{background:#0b5ed7}
+  button:disabled {
+    background-color: #334155;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-sec{background:#334155}
+  .btn-sec:hover{background:#475569}
+  .btn-danger{background:#dc3545}
+  .btn-danger:hover{background:#bb2d3b}
+  .btn-success{background:#198754}
+  .btn-success:hover{background:#157347}
+  .btn-warn { background: #ffc107; color: #000; }
+  .btn-warn:hover {
+    background: #ffca2c;
+  }
+  .hint{font-size:12px;opacity:.8;text-align:center}
+  .section{border-top:1px solid #333;padding-top:8px;margin-top:2px}
+  .control-group { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .thruster-panel { padding: 10px; border: 1px solid #334155; border-radius: 8px; }
+  .thruster-panel h4 { margin: 0 0 10px 0; text-align: center; font-weight: 500; }
+  .view-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .view-buttons-grid .full-span { grid-column: 1 / -1; }
+  
+  .tension-bar-container { background: #222; border-radius: 4px; padding: 2px; border: 1px solid #555; }
+  .tension-bar { height: 10px; width: 0%; background: #28a745; border-radius: 3px; transition: width 0.1s, background-color 0.2s; }
+
+  #maneuver-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+  #maneuver-list li { display: flex; justify-content: space-between; align-items: center; padding: 4px; border-bottom: 1px solid #333; }
+  #maneuver-list span { flex-grow: 1; }
+  #maneuver-list button { font-size: 10px; padding: 2px 6px; margin-left: 4px; }
+  .btn-margin-top { margin-top: 5px; }
+
+  #right-sidebar {
+    position: fixed;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: #000000aa;
+    border-radius: 12px;
+    border: 1px solid #444;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 20;    -webkit-backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+  }
+  .sidebar-btn {
+    background-color: #334155;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .sidebar-btn:hover {
+    background-color: #475569;
+  }
+  .sidebar-btn.active {
+    background-color: #0d6efd;
+    box-shadow: 0 0 10px #0d6efd;
+  }
+
+  #panel-levels {
+    top: 450px;
+    left: 10px;
+    position: absolute;
+    display: none;
+  }
+  .level-buttons-grid {
+    display: grid;
+    gap: 8px;
+  }
+  #level-buttons {
+    display: grid;
+    gap: 8px;
+  }
+  .justify-end {
+    justify-content: flex-end;
+  }
+  #construction-options {
+    gap: 10px;
+  }
+
+  /* Estilos para o novo Controle ASD 2D */
+  .asd-2d-container {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    padding: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .control-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 200px;
+  }
+  .control-wrapper h3 {
+      margin: 0; padding: 0; font-weight: 500; color:  #8a9eb2; text-transform: uppercase;
+  }
+  #panel-asd-2d canvas {
+      background-color: #2c3e50; border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px rgba(0,0,0,0.5) inset;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+  }
+  #info-panel {
+      width: 420px;
+      font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, 'Courier New', monospace;
+      display: flex;
+      gap: 20px;
+  }
+  .prop-section { margin-bottom: 15px; }
+  .prop-section h4 { margin: 0 0 10px 0; font-weight: normal; color: #c1d7ee; border-bottom: 1px solid #2c3e50; padding-bottom: 5px; }
+  .data-row { font-size: 1.1em; margin-bottom: 8px; }
+  .data-label { color: #8a9eb2; }
+  .data-value { color: #ffffff; font-weight: bold; float: right; }
+
+  .indicator-wrapper {
+      margin-bottom: 10px;
+  }
+  .indicator-label {
+      font-size: 0.9em;
+      color: #8a9eb2;
+      margin-bottom: 4px;
+      display: block;
+  }
+  .bar-container {
+      width: 100%;
+      height: 28px;
+      background-color: #101822;
+      border-radius: 5px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #2c3e50;
+  }
+  .bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.1s linear, left 0.1s linear;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+  }
+  .bar-fill.rpm {
+      background: linear-gradient(90deg, #2ecc71 0%, #f1c40f 75%, #e74c3c 100%);
+  }
+  .bar-value {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+  }
+  .controls-row {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+      .popup-panel {
+          max-width: 95vw;
+          max-height: 90vh;
+          overflow-y: auto;
+          min-width: 90vw;
+      }
+      #panel-asd-2d, #panel-adjustments, #panel-views, #panel-environment, #panel-levels, #panel-editor, #panel-buoys, #panel-maneuvers {
+          top: 10px;
+          left: 10px;
+      }
+      #info-panel {
+          flex-direction: column;
+          gap: 10px;
+      }
+      .prop-section {
+          margin-bottom: 5px;
+      }
+      .control-wrapper {
+          width: 140px;
+      }
+      .sidebar-btn {
+          width: 40px;
+          height: 40px;
+          font-size: 20px;
+      }
+      #right-sidebar {
+          right: 5px;
+          padding: 5px;
+          gap: 5px;
+      }
+      .view-buttons-grid {
+          grid-template-columns: 1fr;
+      }
+      .control-group {
+          grid-template-columns: 1fr;
+      }
+      .asd-2d-container {
+          gap: 15px;
+      }
+  }

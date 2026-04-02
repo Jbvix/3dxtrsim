@@ -1,0 +1,1458 @@
+/*
+  Título: Principal JS do Simulador 3D
+  Autor: Charlie Bravo
+  Data da última modificação: 01/04/2026 22:45
+  Versão: 3.3
+  Descrição: Ponto de entrada que inicializa a renderização, loop da física e eventos
+*/
+
+// ====================== IMPORTS ======================
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// ====================== VARIÁVEIS GLOBAIS E CONFIGURAÇÕES ======================
+
+// ===== Variáveis Globais =====
+let scene, camera, renderer, controls, clock;
+let hullGroup, cgPivot; 
+let tug, tugCollider; 
+let waterlineY = 2.0; 
+let portThrusterArrow, starboardThrusterArrow, resultantForceArrow;
+let windArrow, currentArrow;
+let bowLine, sternLine;
+let bowMooringPointMarker, sternMooringPointMarker;
+let currentView = 'orbit';
+const cameraViews = {
+    bow: { pos: new THREE.Vector3(0, 2, 2), target: new THREE.Vector3(0, 1, 10) },
+    stern: { pos: new THREE.Vector3(0, 5, -12), target: new THREE.Vector3(0, 1, -5) },
+    port: { pos: new THREE.Vector3(-3, 1, -3), target: new THREE.Vector3(0, 1, -3) },
+    starboard: { pos: new THREE.Vector3(3, 1, -3), target: new THREE.Vector3(0, 1, -3) },
+};
+
+let raycaster, mouse;
+const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+// ===== Estado da Simulação =====
+const tugState = {
+    position: new THREE.Vector3(0, 0, 0),
+    velocity: new THREE.Vector3(0, 0, 0),
+    yaw: 0, 
+    yawRate: 0, 
+    boundingBox: new THREE.Box3(),
+    isPaused: false,
+};
+
+const mooringState = {
+    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, 6), restLength: 0, targetRestLength: 0 },
+    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, -6), restLength: 0, targetRestLength: 0 }
+};
+const MOORING_DISTANCE_THRESHOLD = 8;
+const WINCH_SPEED = 2.0; // m/s
+
+const asdControls = {
+    port:      { angle: 0, thrust: 0 },
+    starboard: { angle: 0, thrust: 0 }
+};
+
+const environmentControls = {
+    wind: { strength: 0, direction: 0 },
+    current: { strength: 0, direction: 0 }
+};
+
+const physics = {
+    mass: 100000, 
+    momentOfInertia: 3350000, 
+    maxThrust: 294210.0, 
+    linearDamping: 0.98, 
+    angularDamping: 0.98,
+    thrusterOffset: { x: 1.5, z: -5.0 },
+    lineStiffness: 20000.0,
+    lineDamping: 0.85,
+    lineBreakingLoad: 102 * 9807,
+    windCoefficient: 1000,
+    currentCoefficient: 20000,
+    windLeverArm: 1.5,
+    currentLeverArm: 0.5,
+};
+
+const buoyPhysics = {
+    mass: 20,
+    stiffness: 15,
+    damping: 10
+};
+
+let savedManeuvers = JSON.parse(localStorage.getItem('savedManeuvers')) || [];
+
+// ===== Sandbox de Construção =====
+let isConstructionMode = false;
+let placementMode = null; 
+let ghostObject = null;
+let constructionGrid;
+let portElements = []; 
+let buoys = [];
+let activeBuoyColor = null;
+const constructionSettings = {
+    elevation: 1.0,
+    rotation: 0,
+};
+
+// ===== UI Refs =====
+const ui = {
+    statusSpeed: document.getElementById('statusSpeed'),
+    statusHeading: document.getElementById('statusHeading'),
+    statusYawRate: document.getElementById('statusYawRate'),
+    cgX: document.getElementById('cgX'),
+    cgZ: document.getElementById('cgZ'),
+    vX: document.getElementById('vX'),
+    vZ: document.getElementById('vZ'),
+    elevationY: document.getElementById('elevationY'),
+    valElevationY: document.getElementById('valElevationY'),
+    scaleParams: document.getElementById('scaleParams'),
+    moorBow: document.getElementById('moorBow'),
+    moorStern: document.getElementById('moorStern'),
+    bowWinchControl: document.getElementById('bowWinchControl'),
+    sternWinchControl: document.getElementById('sternWinchControl'),
+    bowLineLength: document.getElementById('bowLineLength'),
+    sternLineLength: document.getElementById('sternLineLength'),
+    valBowLineLength: document.getElementById('valBowLineLength'),
+    valSternLineLength: document.getElementById('valSternLineLength'),
+    breakingLoad: document.getElementById('breakingLoad'),
+    stiffness: document.getElementById('stiffness'),
+    valBreakingLoad: document.getElementById('valBreakingLoad'),
+    valStiffness: document.getElementById('valStiffness'),
+    bowTensionBar: document.getElementById('bowTensionBar'),
+    valBowTension: document.getElementById('valBowTension'),
+    sternTensionBar: document.getElementById('sternTensionBar'),
+    valSternTension: document.getElementById('valSternTension'),
+    bowPointZ: document.getElementById('bowPointZ'),
+    valBowPointZ: document.getElementById('valBowPointZ'),
+    bowPointX: document.getElementById('bowPointX'),
+    valBowPointX: document.getElementById('valBowPointX'),
+    bowPointY: document.getElementById('bowPointY'),
+    valBowPointY: document.getElementById('valBowPointY'),
+    sternPointZ: document.getElementById('sternPointZ'),
+    valSternPointZ: document.getElementById('valSternPointZ'),
+    sternPointX: document.getElementById('sternPointX'),
+    valSternPointX: document.getElementById('valSternPointX'),
+    sternPointY: document.getElementById('sternPointY'),
+    valSternPointY: document.getElementById('valSternPointY'),
+    addGreenBuoy: document.getElementById('addGreenBuoy'),
+    addRedBuoy: document.getElementById('addRedBuoy'),
+    clearBuoys: document.getElementById('clearBuoys'),
+    windStrength: document.getElementById('windStrength'),
+    valWindStrength: document.getElementById('valWindStrength'),
+    windDirection: document.getElementById('windDirection'),
+    valWindDirection: document.getElementById('valWindDirection'),
+    currentStrength: document.getElementById('currentStrength'),
+    valCurrentStrength: document.getElementById('valCurrentStrength'),
+    currentDirection: document.getElementById('currentDirection'),
+    valCurrentDirection: document.getElementById('valCurrentDirection'),
+    toggleConstructionMode: document.getElementById('toggleConstructionMode'),
+    constructionTools: document.getElementById('construction-tools'),
+    constructionOptions: document.getElementById('construction-options'),
+    structureElevation: document.getElementById('structureElevation'),
+    valStructureElevation: document.getElementById('valStructureElevation'),
+    structureRotation: document.getElementById('structureRotation'),
+    valStructureRotation: document.getElementById('valStructureRotation'),
+    addPier: document.getElementById('addPier'),
+    addBollard: document.getElementById('addBollard'),
+    clearPort: document.getElementById('clearPort'),
+    maneuverName: document.getElementById('maneuverName'),
+    saveManeuver: document.getElementById('saveManeuver'),
+    maneuverList: document.getElementById('maneuver-list'),
+    // Referências para os novos indicadores
+    angleValueBB: document.getElementById('angle-value-bb'),
+    rpmValueBB: document.getElementById('rpm-value-bb'),
+    angleValueBE: document.getElementById('angle-value-be'),
+    rpmValueBE: document.getElementById('rpm-value-be'),
+    angleBarBB: document.getElementById('angle-bar-bb'),
+    rpmBarBB: document.getElementById('rpm-bar-bb'),
+    angleBarBE: document.getElementById('angle-bar-be'),
+    rpmBarBE: document.getElementById('rpm-bar-be'),
+};
+
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x121723);
+    clock = new THREE.Clock();
+
+    camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2000);
+    camera.position.set(20, 15, 20);
+
+    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth, innerHeight);
+    document.getElementById('app').appendChild(renderer.domElement);
+    renderer.domElement.addEventListener('pointerdown', onPointerDown, false);
+    renderer.domElement.addEventListener('pointermove', onPointerMove, false);
+
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const sea = new THREE.Mesh( new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color:0x2088aa, metalness:.7, roughness:.25}) );
+    sea.rotation.x = -Math.PI/2;
+    scene.add(sea);
+    
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.3);
+    dir.position.set(10, 18, 8);
+    scene.add(dir);
+
+    cgPivot = new THREE.Group();
+    scene.add(cgPivot);
+
+    hullGroup = new THREE.Group();
+    cgPivot.add(hullGroup);
+
+    const cgMarker = new THREE.Mesh(new THREE.SphereGeometry(0.15,24,16), new THREE.MeshBasicMaterial({color:0xffcc00}));
+    cgPivot.add(cgMarker);
+    
+    constructionGrid = new THREE.GridHelper(500, 100, 0x444444, 0x444444);
+    constructionGrid.position.y = 0.01;
+    constructionGrid.visible = false;
+    scene.add(constructionGrid);
+    // ===== INÍCIO DO CÓDIGO A SER ADICIONADO =====
+
+function loadLevel(level) {
+    console.log(`Carregando Nível: "${level.name}"`);
+    
+    // 1. Limpar o cenário atual
+    clearPort();
+    clearBuoys();
+
+    // 2. Posicionar o Rebocador no estado inicial
+    const initialState = level.initialTugState;
+    tugState.position.set(initialState.position.x, initialState.position.y, initialState.position.z);
+    tugState.velocity.set(0, 0, 0);
+    tugState.yaw = THREE.MathUtils.degToRad(initialState.yaw);
+    tugState.yawRate = 0;
+    
+    // 3. Configurar as Condições Ambientais
+    const env = level.environment;
+    ui.windStrength.value = env.wind.strength;
+    ui.windDirection.value = env.wind.direction;
+    ui.currentStrength.value = env.current.strength;
+    ui.currentDirection.value = env.current.direction;
+    // Dispara o evento 'input' para que a UI e a física sejam atualizadas com os novos valores
+    ['windStrength', 'windDirection', 'currentStrength', 'currentDirection'].forEach(id => ui[id].dispatchEvent(new Event('input')));
+
+    // 4. Construir os Elementos do Porto (Cais, Cabeços)
+    if (level.portElements) {
+        level.portElements.forEach(elementData => {
+            placeObjectFromData(elementData); 
+        });
+    }
+
+    // 5. Adicionar as Bóias
+    if (level.buoys) {
+        level.buoys.forEach(buoyData => {
+            const position = new THREE.Vector3(buoyData.position.x, 0, buoyData.position.z);
+            createBuoy(position, buoyData.color);
+        });
+    }
+
+    // Garante que a posição visual do rebocador seja atualizada imediatamente
+    cgPivot.position.copy(tugState.position);
+    cgPivot.rotation.y = tugState.yaw;
+    
+    // Opcional: Fechar o painel de níveis após a seleção
+    document.getElementById('panel-levels').style.display = 'none';
+    
+    // Garante que o rebocador não esteja em modo pausado de construção
+    if(isConstructionMode) {
+      exitConstructionMode();
+    }
+    tugState.isPaused = false;
+
+    // Garante que a rotação da câmera orbital esteja sempre habilitada ao carregar um nível
+    controls.enableRotate = true;
+}
+
+// Função auxiliar para criar objetos do porto a partir dos dados do nível
+function placeObjectFromData(data) {
+    let newMesh;
+    const objectRotation = THREE.MathUtils.degToRad(data.rotation);
+
+    if (data.type === 'pier') {
+        const pierGeo = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
+        const pierMat = new THREE.MeshStandardMaterial({ color: 0x605040, metalness: 0.1, roughness: 0.8 });
+        newMesh = new THREE.Mesh(pierGeo, pierMat);
+        newMesh.position.y = data.position.y - 0.75;
+    } else { // 'bollard'
+        const bollardGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
+        const bollardMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.5 });
+        newMesh = new THREE.Mesh(bollardGeo, bollardMat);
+        newMesh.position.y = data.position.y + 0.4;
+    }
+
+    newMesh.position.x = data.position.x;
+    newMesh.position.z = data.position.z;
+    newMesh.rotation.y = objectRotation;
+    scene.add(newMesh);
+
+    portElements.push({
+        id: THREE.MathUtils.generateUUID(),
+        type: data.type,
+        mesh: newMesh,
+    });
+}
+
+// ===== FIM DO CÓDIGO A SER ADICIONADO =====
+    loadModel();
+    createVisuals();
+    setupUIEvents();
+    // Adicionar dentro de setupUIEvents()
+const levelData = {
+  "nivel-1": {
+    name: "Nível 1: Atracação Básica",
+    description: "Atraque o rebocador ao cais. Condições ideais, sem obstáculos.",
+    initialTugState: { position: { x: 0, y: 0, z: 50 }, yaw: 180 },
+    environment: { wind: { strength: 0, direction: 0 }, current: { strength: 0, direction: 0 } },
+    portElements: [
+      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
+        { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
+      
+    ],
+    buoys: []
+  },
+  "nivel-2": {
+    name: "Nível 2: Canal de Boias Reto",
+    description: "Navegue pelo canal de boias e aproxime-se do cais.",
+    initialTugState: { position: { x: 0, y: 0, z: 150 }, yaw: 180 },
+    environment: { wind: { strength: 5, direction: 90 }, current: { strength: 0, direction: 0 } },
+    portElements: [
+      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
+    ],
+    buoys: [
+      { color: 'green', position: { x: -10, z: 120 } }, { color: 'red', position: { x: 10, z: 120 } },
+      { color: 'green', position: { x: -10, z: 90 } },  { color: 'red', position: { x: 10, z: 90 } },
+      { color: 'green', position: { x: -10, z: 60 } },  { color: 'red', position: { x: 10, z: 60 } }
+    ]
+  },
+  "nivel-3a": {
+    name: "Nível 3: Curva com Vento a Favor",
+    description: "Navegue pelo canal sinuoso até o cais, com vento empurrando para o berço.",
+    initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
+    environment: { wind: { strength: 15, direction: 270 }, current: { strength: 0, direction: 0 } },
+    portElements: [
+      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
+    ],
+    buoys: [
+      {"color": "red",   "position": {"x": 87, "z": 85}},
+      {"color": "green", "position": {"x": 57, "z": 85}},
+      {"color": "red",   "position": {"x": 75, "z": 65}},
+      {"color": "green", "position": {"x": 45, "z": 65}},
+      {"color": "red",   "position": {"x": 57, "z": 48}},
+      {"color": "green", "position": {"x": 27, "z": 48}},
+      {"color": "red",   "position": {"x": 35, "z": 35}},
+      {"color": "green", "position": {"x": 5, "z": 35}},
+     
+    ]
+  },
+  "nivel-3b": {
+    name: "Nível 3: Curva com Corrente Contra",
+    description: "Mesmo percurso, mas agora com corrente contrária à atracação.",
+    initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
+    environment: { wind: { strength: 0, direction: 0 }, current: { strength: 1.5, direction: 90 } },
+    portElements: [
+      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
+      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
+      
+    ],
+    buoys: [
+      {"color": "red",   "position": {"x": 87, "z": 85}},
+      {"color": "green", "position": {"x": 57, "z": 85}},
+      {"color": "red",   "position": {"x": 75, "z": 65}},
+      {"color": "green", "position": {"x": 45, "z": 65}},
+      {"color": "red",   "position": {"x": 57, "z": 48}},
+      {"color": "green", "position": {"x": 27, "z": 58}},
+      {"color": "red",   "position": {"x": 35, "z": 35}},
+      {"color": "green", "position": {"x": 1, "z": 45}},
+      {"color": "red",   "position": {"x": 17, "z": 25}},
+      {"color": "green", "position": {"x": -13, "z": 35}}
+    ]
+  }
+};
+
+document.getElementById('level-buttons').addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+        const levelId = e.target.getAttribute('data-level-id');
+        if (levelData[levelId]) {
+           loadLevel(levelData[levelId]);
+        }
+    }
+});
+
+
+    updateMooringPoints();
+    
+    // Inicia carregações
+    loadModel();
+    loadCargoShip();
+    
+    animate();
+}
+
+function loadModel() {
+    const loader = new GLTFLoader();
+    const modelPath = './modelo_rebocador/tugboat.glb';
+    const onModelLoad = (modelObject) => {
+        const bbox = new THREE.Box3().setFromObject(modelObject);
+        const center = bbox.getCenter(new THREE.Vector3());
+        modelObject.position.sub(center);
+        
+        hullGroup.add(modelObject);
+        updateCG();
+
+        const scale = modelObject.scale;
+        ui.scaleParams.textContent = `${scale.x.toFixed(1)}, ${scale.y.toFixed(1)}, ${scale.z.toFixed(1)}`;
+        
+        const size = bbox.getSize(new THREE.Vector3());
+        const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
+        const colliderMat = new THREE.MeshBasicMaterial({ visible: false, wireframe: true });
+        tugCollider = new THREE.Mesh(colliderGeo, colliderMat);
+        hullGroup.add(tugCollider);
+    };
+
+    loader.load(modelPath, (gltf) => {
+        tug = gltf.scene;
+        tug.scale.set(0.5, 0.5, 0.5); 
+        tug.rotation.y = -Math.PI / 2;
+        onModelLoad(tug);
+
+    }, undefined, (err) => {
+        console.error('ERRO AO CARREGAR O MODELO:', err);
+        const fallback = new THREE.Mesh( new THREE.BoxGeometry(4, 2, 10), new THREE.MeshStandardMaterial({color:0x9999aa, metalness:.4, roughness:.6}) );
+        onModelLoad(fallback);
+    });
+}
+
+function loadCargoShip() {
+    const loader = new GLTFLoader();
+    const modelPath = './modelo_navio/cargo_ship.glb';
+    
+    const onModelLoad = (ship) => {
+        const bbox = new THREE.Box3().setFromObject(ship);
+        const center = bbox.getCenter(new THREE.Vector3());
+        
+        // Centraliza o navio em todos os eixos no origin do Group
+        ship.position.sub(center);
+        
+        const shipGroup = new THREE.Group();
+        shipGroup.add(ship);
+        
+        const size = bbox.getSize(new THREE.Vector3());
+        
+        // Elevação de 40% solicitada pelo usuário para revelar o casco
+        shipGroup.position.set(50, size.y * 0.4, -30);
+        shipGroup.rotation.y = -Math.PI / 6; // Ângulo para facilitar as abordagens
+        
+        scene.add(shipGroup);
+        
+        // = Colisionador Físico = (Oculto)
+        // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
+        const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
+        const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
+        const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
+        
+        // Como o navio foi perfeitamente centralizado, o collider também fica no zero
+        shipCollider.position.set(0, 0, 0);
+        shipGroup.add(shipCollider);
+        
+        portElements.push({
+            id: THREE.MathUtils.generateUUID(),
+            type: 'pier', // Atua com a mesma física de rebote brutal do pier/oceano
+            mesh: shipCollider
+        });
+        
+        // == Ancoradouros / Cabeços do Navio ==
+        const isZAxisLonger = size.z > size.x;
+        // Pela screenshot e solicitação, descemos o local do convés ainda mais em relação ao centro da malha (submerso parcialmente).
+        const deckY = -(size.y * 0.18); 
+
+        // Criando visual em amarelo chamativo só para distinguir se precisarmos
+        const bowBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0xe67e22}));
+        const sternBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
+        
+        if (isZAxisLonger) {
+            bowBollard.position.set(0, deckY, size.z / 2 * 0.9);
+            sternBollard.position.set(0, deckY, -size.z / 2 * 0.9);
+        } else {
+            bowBollard.position.set(size.x / 2 * 0.9, deckY, 0);
+            sternBollard.position.set(-size.x / 2 * 0.9, deckY, 0);
+        }
+
+        shipGroup.add(bowBollard);
+        shipGroup.add(sternBollard);
+
+        // Submete cabeços de atracação aos cabos de guincho
+        portElements.push({ id: THREE.MathUtils.generateUUID(), type: 'bollard', isShipBollard: true, shipLocation: 'bow', mesh: bowBollard });
+        portElements.push({ id: THREE.MathUtils.generateUUID(), type: 'bollard', isShipBollard: true, shipLocation: 'stern', mesh: sternBollard });
+    };
+
+    loader.load(modelPath, (gltf) => {
+        onModelLoad(gltf.scene);
+    }, undefined, (err) => {
+        console.error('ERRO AO CARREGAR O NAVIO:', err);
+    });
+}
+
+function createVisuals() {
+    const arrowLength = 2.5;
+    portThrusterArrow = new THREE.ArrowHelper( new THREE.Vector3(0, 0, 1), new THREE.Vector3(physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0xff0000, 0.5, 0.5 );
+    starboardThrusterArrow = new THREE.ArrowHelper( new THREE.Vector3(0, 0, 1), new THREE.Vector3(-physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0x00ff00, 0.5, 0.5 );
+    
+    resultantForceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 0, 0x00ffff, 1.0, 0.8);
+    cgPivot.add(resultantForceArrow);
+    hullGroup.add(portThrusterArrow, starboardThrusterArrow);
+
+    windArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0, 8, 0), 0, 0xffffff, 1.5, 1);
+    currentArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0, 0.2, 0), 0, 0x0000ff, 1.5, 1);
+    scene.add(windArrow, currentArrow);
+    
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const points = [new THREE.Vector3(), new THREE.Vector3()];
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+    bowLine = new THREE.Line(lineGeo, lineMat);
+    sternLine = new THREE.Line(lineGeo.clone(), lineMat.clone());
+    bowLine.visible = sternLine.visible = false;
+    scene.add(bowLine, sternLine);
+    mooringState.bow.line = bowLine;
+    mooringState.stern.line = sternLine;
+    
+    const pointGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 12);
+    const bowPointMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    const sternPointMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+    
+    bowMooringPointMarker = new THREE.Mesh(pointGeo, bowPointMat);
+    sternMooringPointMarker = new THREE.Mesh(pointGeo, sternPointMat);
+    
+    hullGroup.add(bowMooringPointMarker);
+    hullGroup.add(sternMooringPointMarker);
+}
+
+function updateVisuals(totalForce) {
+    if(tugState.isPaused) return;
+
+    const portAngleRad = THREE.MathUtils.degToRad(asdControls.port.angle);
+    const starboardAngleRad = THREE.MathUtils.degToRad(asdControls.starboard.angle);
+    const portForceDir = new THREE.Vector3(Math.sin(portAngleRad), 0, Math.cos(portAngleRad));
+    const starboardForceDir = new THREE.Vector3(Math.sin(starboardAngleRad), 0, Math.cos(starboardAngleRad));
+
+    portThrusterArrow.setDirection(portForceDir.clone().negate());
+    starboardThrusterArrow.setDirection(starboardForceDir.clone().negate());
+    
+    const forceMagnitude = totalForce.length();
+    if (forceMagnitude > 1.0) {
+        resultantForceArrow.visible = true;
+        const localForceDir = totalForce.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -tugState.yaw).normalize();
+        const arrowLength = Math.min(forceMagnitude / physics.maxThrust, 1.0) * 8;
+        resultantForceArrow.setDirection(localForceDir);
+        resultantForceArrow.setLength(arrowLength, 1.0, 0.8);
+    } else {
+        resultantForceArrow.visible = false;
+    }
+
+    const windDirRad = THREE.MathUtils.degToRad(environmentControls.wind.direction);
+    const windVector = new THREE.Vector3(Math.sin(windDirRad), 0, Math.cos(windDirRad));
+    windArrow.setDirection(windVector);
+    windArrow.setLength(environmentControls.wind.strength * 0.2, 1.5, 1);
+    windArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 8, 0));
+
+    const currentDirRad = THREE.MathUtils.degToRad(environmentControls.current.direction);
+    const currentVector = new THREE.Vector3(Math.sin(currentDirRad), 0, Math.cos(currentDirRad));
+    currentArrow.setDirection(currentVector);
+    currentArrow.setLength(environmentControls.current.strength * 2.0, 1.5, 1);
+    currentArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 0.2, 0));
+
+
+    for (const type of ['bow', 'stern']) {
+        const state = mooringState[type];
+        if (state.isMoored) {
+            const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
+            const bollardPoint = state.bollard;
+            const currentLength = mooringPointWorld.distanceTo(bollardPoint);
+            const isTaut = currentLength > state.restLength;
+
+            let points = [];
+            if (isTaut) {
+                points.push(mooringPointWorld);
+                points.push(bollardPoint);
+                state.line.material.color.set(0xffffff);
+            } else {
+                const slack = state.restLength - currentLength;
+                const sag = Math.min(slack * 0.4, 8);
+                
+                const midPoint = new THREE.Vector3().addVectors(mooringPointWorld, bollardPoint).multiplyScalar(0.5);
+                const controlPoint = midPoint.clone().add(new THREE.Vector3(0, -sag, 0));
+
+                const curve = new THREE.QuadraticBezierCurve3(mooringPointWorld, controlPoint, bollardPoint);
+                points = curve.getPoints(20);
+                state.line.material.color.set(0x888888);
+            }
+            
+            state.line.geometry.setFromPoints(points);
+            state.line.visible = true;
+        }
+    }
+}
+
+function updateCG() {
+    const cgX = parseFloat(ui.cgX.value);
+    const cgZ = parseFloat(ui.cgZ.value);
+    hullGroup.position.set(-cgX, 0, -cgZ);
+    ui.vX.textContent = cgX.toFixed(2);
+    ui.vZ.textContent = cgZ.toFixed(2);
+}
+
+function updateMooringPoints() {
+    const bowZ = parseFloat(ui.bowPointZ.value);
+    const bowX = parseFloat(ui.bowPointX.value);
+    const bowY = parseFloat(ui.bowPointY.value);
+    const sternZ = parseFloat(ui.sternPointZ.value);
+    const sternX = parseFloat(ui.sternPointX.value);
+    const sternY = parseFloat(ui.sternPointY.value);
+
+    mooringState.bow.mooringPoint.set(bowX, bowY, bowZ);
+    mooringState.stern.mooringPoint.set(sternX, sternY, sternZ);
+
+    ui.valBowPointZ.textContent = bowZ.toFixed(1);
+    ui.valBowPointX.textContent = bowX.toFixed(1);
+    ui.valBowPointY.textContent = bowY.toFixed(1);
+    ui.valSternPointZ.textContent = sternZ.toFixed(1);
+    ui.valSternPointX.textContent = sternX.toFixed(1);
+    ui.valSternPointY.textContent = sternY.toFixed(1);
+
+    if (bowMooringPointMarker && sternMooringPointMarker) {
+        bowMooringPointMarker.position.set(bowX, bowY + 0.2, bowZ); 
+        sternMooringPointMarker.position.set(sternX, sternY + 0.2, sternZ);
+    }
+}
+
+
+function makeDraggable(panel) {
+    const header = panel.querySelector('.panel-header');
+    let isDragging = false;
+    let offset = new THREE.Vector2();
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offset.x = e.clientX - panel.offsetLeft;
+        offset.y = e.clientY - panel.offsetTop;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        panel.style.left = `${e.clientX - offset.x}px`;
+        panel.style.top = `${e.clientY - offset.y}px`;
+    }
+
+    function onMouseUp() {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
+}
+
+function setCameraView(view) {
+    currentView = view;
+    controls.enabled = (view === 'orbit');
+}
+
+function renderManeuverList() {
+    ui.maneuverList.innerHTML = '';
+    savedManeuvers.forEach((maneuver, index) => {
+        const li = document.createElement('li');
+        const span = document.createElement('span');
+        span.textContent = maneuver.name;
+        
+        const execBtn = document.createElement('button');
+        execBtn.textContent = 'Executar';
+        execBtn.classList.add('btn-success');
+        execBtn.onclick = () => executeManeuver(index);
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Excluir';
+        delBtn.classList.add('btn-danger');
+        delBtn.onclick = () => deleteManeuver(index);
+
+        li.appendChild(span);
+        li.appendChild(execBtn);
+        li.appendChild(delBtn);
+        ui.maneuverList.appendChild(li);
+    });
+}
+
+function executeManeuver(index) {
+    const maneuver = savedManeuvers[index];
+    if (maneuver) {
+        ui.anglePort.value = maneuver.port.angle;
+        ui.thrustPort.value = maneuver.port.thrust;
+        ui.angleStarboard.value = maneuver.starboard.angle;
+        ui.thrustStarboard.value = maneuver.starboard.thrust;
+
+        ['anglePort', 'thrustPort', 'angleStarboard', 'thrustStarboard'].forEach(id => ui[id].dispatchEvent(new Event('input')));
+    }
+}
+
+function deleteManeuver(index) {
+    savedManeuvers.splice(index, 1);
+    localStorage.setItem('savedManeuvers', JSON.stringify(savedManeuvers));
+    renderManeuverList();
+}
+
+function setupUIEvents() {
+    ui.cgX.addEventListener('input', updateCG);
+    ui.cgZ.addEventListener('input', updateCG);
+    ui.elevationY.addEventListener('input', (e) => {
+        waterlineY = parseFloat(e.target.value);
+        ui.valElevationY.textContent = waterlineY.toFixed(2);
+    });
+    
+    document.getElementById('resetPosition').addEventListener('click', () => {
+        tugState.position.set(0, 0, 0);
+        tugState.velocity.set(0, 0, 0);
+        tugState.yaw = 0;
+        tugState.yawRate = 0;
+        if(mooringState.bow.isMoored) toggleMooring('bow');
+        if(mooringState.stern.isMoored) toggleMooring('stern');
+    });
+
+    ui.moorBow.addEventListener('click', () => toggleMooring('bow'));
+    ui.moorStern.addEventListener('click', () => toggleMooring('stern'));
+    
+    document.getElementById('moorTugBowToShipBow')?.addEventListener('click', () => toggleShipMooring('bow', 'bow'));
+    document.getElementById('moorTugBowToShipStern')?.addEventListener('click', () => toggleShipMooring('bow', 'stern'));
+    document.getElementById('moorTugSternToShipBow')?.addEventListener('click', () => toggleShipMooring('stern', 'bow'));
+    document.getElementById('moorTugSternToShipStern')?.addEventListener('click', () => toggleShipMooring('stern', 'stern'));
+
+    ui.bowLineLength.addEventListener('input', (e) => {
+        if (mooringState.bow.isMoored) {
+            mooringState.bow.targetRestLength = parseFloat(e.target.value);
+        }
+    });
+    ui.sternLineLength.addEventListener('input', (e) => {
+        if (mooringState.stern.isMoored) {
+            mooringState.stern.targetRestLength = parseFloat(e.target.value);
+        }
+    });
+
+    document.getElementById('viewBow').addEventListener('click', () => setCameraView('bow'));
+    document.getElementById('viewStern').addEventListener('click', () => setCameraView('stern'));
+    document.getElementById('viewPort').addEventListener('click', () => setCameraView('port'));
+    document.getElementById('viewStarboard').addEventListener('click', () => setCameraView('starboard'));
+    document.getElementById('viewOrbit').addEventListener('click', () => setCameraView('orbit'));
+
+    document.querySelectorAll('.popup-panel').forEach(makeDraggable);
+
+    ui.breakingLoad.addEventListener('input', (e) => {
+        const tonnes = parseFloat(e.target.value);
+        physics.lineBreakingLoad = tonnes * 9807;
+        ui.valBreakingLoad.textContent = tonnes.toFixed(0);
+    });
+
+    ui.stiffness.addEventListener('input', (e) => {
+        physics.lineStiffness = parseFloat(e.target.value) * 1000;
+        ui.valStiffness.textContent = e.target.value;
+    });
+
+    ui.breakingLoad.value = physics.lineBreakingLoad / 9807;
+    ui.valBreakingLoad.textContent = ui.breakingLoad.value;
+    ui.stiffness.value = physics.lineStiffness / 1000;
+    ui.valStiffness.textContent = ui.stiffness.value;
+    
+    ui.windStrength.addEventListener('input', (e) => { environmentControls.wind.strength = parseFloat(e.target.value); ui.valWindStrength.textContent = e.target.value; });
+    ui.windDirection.addEventListener('input', (e) => { environmentControls.wind.direction = parseFloat(e.target.value); ui.valWindDirection.textContent = e.target.value; });
+    ui.currentStrength.addEventListener('input', (e) => { environmentControls.current.strength = parseFloat(e.target.value); ui.valCurrentStrength.textContent = parseFloat(e.target.value).toFixed(1); });
+    ui.currentDirection.addEventListener('input', (e) => { environmentControls.current.direction = parseFloat(e.target.value); ui.valCurrentDirection.textContent = e.target.value; });
+
+
+    ui.bowPointZ.addEventListener('input', updateMooringPoints);
+    ui.bowPointX.addEventListener('input', updateMooringPoints);
+    ui.bowPointY.addEventListener('input', updateMooringPoints);
+    ui.sternPointZ.addEventListener('input', updateMooringPoints);
+    ui.sternPointX.addEventListener('input', updateMooringPoints);
+    ui.sternPointY.addEventListener('input', updateMooringPoints);
+
+    ui.saveManeuver.addEventListener('click', () => {
+        const name = ui.maneuverName.value.trim();
+        if (name) {
+            savedManeuvers.push({
+                name: name,
+                port: { angle: asdControls.port.angle, thrust: asdControls.port.thrust },
+                starboard: { angle: asdControls.starboard.angle, thrust: asdControls.starboard.thrust }
+            });
+            localStorage.setItem('savedManeuvers', JSON.stringify(savedManeuvers));
+            ui.maneuverName.value = '';
+            renderManeuverList();
+        } else {
+            alert('Por favor, dê um nome para a manobra.');
+        }
+    });
+
+    const sidebarButtons = document.querySelectorAll('.sidebar-btn');
+    sidebarButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const panelId = button.getAttribute('data-panel-id');
+            const panel = document.getElementById(panelId);
+
+            const isActive = button.classList.contains('active');
+            
+            if(isActive) {
+                panel.style.display = 'none';
+                button.classList.remove('active');
+            } else {
+                 panel.style.display = 'grid';
+                 button.classList.add('active');
+                 document.querySelectorAll('.popup-panel').forEach(p => p.style.zIndex = 10);
+                 panel.style.zIndex = 11;
+            }
+        });
+    });
+    
+    setupBuoyControls();
+    setupConstructionControls();
+    renderManeuverList();
+    
+    // --- Integração com o Painel de Controle ASD Autônomo ---
+    const handleAsdControlMessage = (event) => {
+        if (event.data?.type === 'asdControlState') {
+            const { port, starboard } = event.data.payload;
+            const idleRpm = 650;
+            const maxRpm = 1600;
+            const propulsionRpmRange = maxRpm - idleRpm;
+
+            // Converte o ângulo (0-360) e RPM para os valores que a física do simulador espera
+            asdControls.port.angle = port.angle > 180 ? port.angle - 360 : port.angle; // Converte 0-360 para -180 a 180
+            // Calcula o empuxo somente para RPMs acima da marcha lenta
+            asdControls.port.thrust = Math.max(0, (port.rpm - idleRpm) / propulsionRpmRange) * 100;
+
+            asdControls.starboard.angle = starboard.angle > 180 ? starboard.angle - 360 : starboard.angle;
+            asdControls.starboard.thrust = Math.max(0, (starboard.rpm - idleRpm) / propulsionRpmRange) * 100;
+        }
+    };
+
+    window.addEventListener('message', handleAsdControlMessage);
+}
+
+function toggleMooring(type) {
+    const state = mooringState[type];
+    const button = ui[type === 'bow' ? 'moorBow' : 'moorStern'];
+    const winchControl = ui[type === 'bow' ? 'bowWinchControl' : 'sternWinchControl'];
+    const winchSlider = ui[type === 'bow' ? 'bowLineLength' : 'sternLineLength'];
+    const winchValue = ui[type === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
+    const tensionBar = ui[type === 'bow' ? 'bowTensionBar' : 'sternTensionBar'];
+    const tensionVal = ui[type === 'bow' ? 'valBowTension' : 'valSternTension'];
+
+    if (state.isMoored) {
+        state.isMoored = false;
+        state.bollard = null;
+        state.line.visible = false;
+        winchControl.style.display = 'none';
+        button.textContent = `Atracar ${type === 'bow' ? 'Proa' : 'Popa'}`;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-sec');
+        tensionVal.textContent = '0.0';
+        tensionBar.style.width = '0%';
+
+    } else {
+        const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
+        let closestBollard = null;
+        let minDistance = Infinity;
+
+        portElements.filter(el => el.type === 'bollard').forEach(bollardEl => {
+            const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+            const distance = mooringPointWorld.distanceTo(worldBollardPos);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestBollard = worldBollardPos.clone();
+            }
+        });
+
+        if (closestBollard && minDistance <= MOORING_DISTANCE_THRESHOLD) {
+            state.isMoored = true;
+            state.bollard = closestBollard;
+            state.line.visible = true;
+            state.restLength = minDistance;
+            state.targetRestLength = minDistance;
+            winchSlider.value = minDistance;
+            winchValue.textContent = minDistance.toFixed(1);
+            winchControl.style.display = 'block';
+            button.textContent = `Largar ${type === 'bow' ? 'Proa' : 'Popa'}`;
+            button.classList.remove('btn-sec');
+            button.classList.add('btn-success');
+        } else {
+            alert('Nenhum cabeço próximo o suficiente para atracar.');
+        }
+    }
+}
+
+function toggleShipMooring(tugEnd, shipEnd) {
+    const state = mooringState[tugEnd];
+    if (state.isMoored) return; // Se já estiver atracado, o botão padrão "Largar" cuida do release
+    
+    // Procura o cabeço específico do navio
+    const targetBollard = portElements.find(el => el.isShipBollard && el.shipLocation === shipEnd);
+    if(!targetBollard) return;
+
+    const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
+    const worldBollardPos = targetBollard.mesh.getWorldPosition(new THREE.Vector3());
+    const distance = mooringPointWorld.distanceTo(worldBollardPos);
+    
+    // Força a atracação imediata
+    state.bollard = worldBollardPos.clone();
+    state.isMoored = true;
+    state.restLength = distance;
+    state.targetRestLength = distance;
+
+    // Constrói ou exibe a malha visual do cabo
+    if (!state.line) {
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([mooringPointWorld, worldBollardPos]);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        state.line = new THREE.Line(lineGeo, lineMat);
+        scene.add(state.line);
+    } else {
+        state.line.visible = true;
+    }
+
+    // Adapta o Layout do Guincho Clássico simulando o atracamento no navio
+    const button = ui[tugEnd === 'bow' ? 'moorBow' : 'moorStern'];
+    const winchControl = ui[tugEnd === 'bow' ? 'bowWinchControl' : 'sternWinchControl'];
+    const winchSlider = ui[tugEnd === 'bow' ? 'bowLineLength' : 'sternLineLength'];
+    const winchValue = ui[tugEnd === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
+    
+    winchControl.style.display = 'block';
+    button.textContent = `Largar Navio (${tugEnd === 'bow' ? 'Proa' : 'Popa'})`;
+    button.classList.remove('btn-sec');
+    button.classList.add('btn-success');
+    button.disabled = false; // Mantém botão ativo para podermos largar a qualquer momento
+
+    winchSlider.min = (distance * 0.1).toFixed(1);
+    winchSlider.max = (distance * 2.0).toFixed(1);
+    winchSlider.value = distance.toFixed(1);
+    winchValue.textContent = distance.toFixed(1);
+}
+
+function setupBuoyControls() {
+    ui.addGreenBuoy.addEventListener('click', () => { if(!isConstructionMode) activeBuoyColor = 'green'; });
+    ui.addRedBuoy.addEventListener('click', () => { if(!isConstructionMode) activeBuoyColor = 'red'; });
+    ui.clearBuoys.addEventListener('click', clearBuoys);
+}
+
+function clearBuoys() {
+  // Remove todas as bóias da cena e libera recursos de memória (geometria, material)
+  buoys.forEach(b => {
+    if (b.mesh) {
+      b.mesh.traverse?.((child) => {
+        if (child.isMesh) {
+          child.geometry?.dispose?.();
+          if (child.material) {
+            // Lida com materiais únicos ou múltiplos
+            if (Array.isArray(child.material)) {
+              child.material.forEach(m => m.dispose?.());
+            } else {
+              child.material.dispose?.();
+            }
+          }
+        }
+      });
+      scene.remove(b.mesh);
+    }
+  });
+  buoys = []; // Esvazia o array de estado
+}
+
+function createBuoy(position, color) {
+    const buoyGroup = new THREE.Group();
+    const buoyColorHex = color === 'green' ? 0x00ff00 : 0xff0000;
+
+    const bodyMat = new THREE.MeshStandardMaterial({ color: buoyColorHex, metalness: 0.4, roughness: 0.6 });
+    const coneGeo = new THREE.ConeGeometry(0.7, 1.2, 16);
+    const cone = new THREE.Mesh(coneGeo, bodyMat);
+    cone.position.y = 0.6;
+    
+    const cylinderGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.4, 16);
+    const cylinder = new THREE.Mesh(cylinderGeo, bodyMat);
+    
+    buoyGroup.add(cone);
+    buoyGroup.add(cylinder);
+
+    const anchorLineMat = new THREE.LineBasicMaterial({ color: 0x333333 });
+    const points = [new THREE.Vector3(0, -0.2, 0), new THREE.Vector3(0, -10, 0)];
+    const anchorLineGeo = new THREE.BufferGeometry().setFromPoints(points);
+    const anchorLine = new THREE.Line(anchorLineGeo, anchorLineMat);
+    buoyGroup.add(anchorLine);
+
+    scene.add(buoyGroup);
+    
+    const buoy = {
+        mesh: buoyGroup,
+        anchor: position.clone(),
+        position: position.clone(),
+        velocity: new THREE.Vector3(),
+        collider: new THREE.Sphere(position.clone(), 0.2), 
+        bobOffset: Math.random() * Math.PI * 2
+    };
+    buoys.push(buoy);
+}
+
+function updateBuoys(dt) {
+    if(tugState.isPaused) return;
+    const time = clock.getElapsedTime();
+    buoys.forEach(buoy => {
+        buoy.mesh.position.y = Math.sin(time * 2 + buoy.bobOffset) * 0.2;
+
+        const displacement = new THREE.Vector3().subVectors(buoy.position, buoy.anchor);
+        const springForce = displacement.clone().multiplyScalar(-buoyPhysics.stiffness);
+        const dampingForce = buoy.velocity.clone().multiplyScalar(-buoyPhysics.damping);
+        const totalForce = new THREE.Vector3().addVectors(springForce, dampingForce);
+        const acceleration = totalForce.divideScalar(buoyPhysics.mass);
+        
+        buoy.velocity.add(acceleration.multiplyScalar(dt));
+        buoy.position.add(buoy.velocity.clone().multiplyScalar(dt));
+
+        buoy.velocity.multiplyScalar(0.98);
+
+        buoy.mesh.position.x = buoy.position.x;
+        buoy.mesh.position.z = buoy.position.z;
+        buoy.collider.center.copy(buoy.mesh.position);
+    });
+}
+
+
+function updatePhysics(dt) {
+    if(tugState.isPaused) return;
+
+    let totalForce = new THREE.Vector3(0, 0, 0);
+    let totalTorque = 0;
+    const cgOffset = new THREE.Vector3(parseFloat(ui.cgX.value), 0, parseFloat(ui.cgZ.value));
+
+    const thrusters = [
+        { angle: asdControls.port.angle, thrust: asdControls.port.thrust, posX: -physics.thrusterOffset.x }, 
+        { angle: asdControls.starboard.angle, thrust: asdControls.starboard.thrust, posX: physics.thrusterOffset.x }
+    ];
+    
+    thrusters.forEach(thruster => {
+        const power = (thruster.thrust / 100) * physics.maxThrust;
+        const angleRad = THREE.MathUtils.degToRad(thruster.angle);
+        const localForce = new THREE.Vector3(Math.sin(angleRad), 0, Math.cos(angleRad)).multiplyScalar(power);
+        
+        const globalForce = localForce.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), tugState.yaw);
+        totalForce.add(globalForce);
+
+        const r = new THREE.Vector3(thruster.posX - cgOffset.x, 0, physics.thrusterOffset.z - cgOffset.z);
+        totalTorque += r.z * localForce.x - r.x * localForce.z;
+    });
+
+    const windAngleRad = THREE.MathUtils.degToRad(environmentControls.wind.direction);
+    const relativeWindAngle = windAngleRad - tugState.yaw;
+    const windSpeed = environmentControls.wind.strength * 0.5144;
+    const windMagnitude = windSpeed * windSpeed * physics.windCoefficient;
+    const lateralWindForce = windMagnitude * Math.sin(relativeWindAngle);
+    const longitudinalWindForce = windMagnitude * Math.cos(relativeWindAngle);
+    const windForceVector = new THREE.Vector3(lateralWindForce, 0, longitudinalWindForce).applyAxisAngle(new THREE.Vector3(0,1,0), tugState.yaw);
+    totalForce.add(windForceVector);
+    totalTorque += lateralWindForce * physics.windLeverArm;
+
+    const currentAngleRad = THREE.MathUtils.degToRad(environmentControls.current.direction);
+    const relativeCurrentAngle = currentAngleRad - tugState.yaw;
+    const currentSpeed = environmentControls.current.strength * 0.5144;
+    const currentMagnitude = currentSpeed * physics.currentCoefficient;
+    const lateralCurrentForce = currentMagnitude * Math.sin(relativeCurrentAngle);
+    const longitudinalCurrentForce = currentMagnitude * Math.cos(relativeCurrentAngle);
+    const currentForceVector = new THREE.Vector3(lateralCurrentForce, 0, longitudinalCurrentForce).applyAxisAngle(new THREE.Vector3(0,1,0), tugState.yaw);
+    totalForce.add(currentForceVector);
+    totalTorque += lateralCurrentForce * physics.currentLeverArm;
+
+
+    for (const type of ['bow', 'stern']) {
+        const state = mooringState[type];
+        const tensionBar = ui[type === 'bow' ? 'bowTensionBar' : 'sternTensionBar'];
+        const tensionVal = ui[type === 'bow' ? 'valBowTension' : 'valSternTension'];
+        const lineLengthVal = ui[type === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
+
+        if (state.isMoored) {
+            const lengthDifference = state.targetRestLength - state.restLength;
+            if (Math.abs(lengthDifference) > 0.01) {
+                const adjustment = Math.sign(lengthDifference) * WINCH_SPEED * dt;
+                state.restLength += (Math.abs(adjustment) > Math.abs(lengthDifference)) ? lengthDifference : adjustment;
+                lineLengthVal.textContent = state.restLength.toFixed(1);
+            }
+
+            const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
+            const lineVector = new THREE.Vector3().subVectors(state.bollard, mooringPointWorld);
+            const currentLength = lineVector.length();
+            const stretch = currentLength - state.restLength;
+
+            if (stretch > 0) {
+                const forceDirection = lineVector.clone().normalize();
+                const springForceMagnitude = stretch * physics.lineStiffness;
+                
+                const relativeVelocity = tugState.velocity.clone();
+                const closingSpeed = relativeVelocity.dot(forceDirection);
+                const dampingForceMagnitude = closingSpeed * physics.lineDamping;
+
+                let totalLineForce = springForceMagnitude - dampingForceMagnitude;
+                if (totalLineForce < 0) totalLineForce = 0;
+
+                const tensionTons = totalLineForce / 9807; 
+                const tensionPercent = Math.min((totalLineForce / physics.lineBreakingLoad) * 100, 100);
+                tensionVal.textContent = tensionTons.toFixed(1);
+                tensionBar.style.width = `${tensionPercent}%`;
+                if (tensionPercent > 85) tensionBar.style.backgroundColor = '#dc3545';
+                else if (tensionPercent > 50) tensionBar.style.backgroundColor = '#ffc107';
+                else tensionBar.style.backgroundColor = '#28a745';
+
+                if (totalLineForce > physics.lineBreakingLoad) {
+                    toggleMooring(type);
+                    continue;
+                }
+
+                const lineForceVector = forceDirection.clone().multiplyScalar(totalLineForce);
+                totalForce.add(lineForceVector);
+
+                const r = new THREE.Vector3().subVectors(mooringPointWorld, tugState.position);
+                totalTorque += r.z * lineForceVector.x - r.x * lineForceVector.z;
+            
+            } else {
+                tensionVal.textContent = '0.0';
+                tensionBar.style.width = '0%';
+                tensionBar.style.backgroundColor = '#28a745';
+            }
+        }
+    }
+
+    const linearAcceleration = totalForce.clone().divideScalar(physics.mass);
+    tugState.velocity.add(linearAcceleration.multiplyScalar(dt));
+    
+    const angularAcceleration = totalTorque / physics.momentOfInertia;
+    tugState.yawRate += angularAcceleration * dt;
+    
+    tugState.velocity.multiplyScalar(1.0 - (1.0 - physics.linearDamping) * dt * 60);
+    tugState.yawRate *= (1.0 - (1.0 - physics.angularDamping) * dt * 60);
+
+    tugState.position.add(tugState.velocity.clone().multiplyScalar(dt));
+    tugState.yaw += tugState.yawRate * dt;
+
+    updateVisuals(totalForce);
+}
+
+function checkCollisions() {
+    if (!tugCollider || tugState.isPaused) return;
+
+    tugCollider.updateWorldMatrix(true, false);
+    const worldColliderBox = new THREE.Box3().setFromObject(tugCollider);
+    tugState.boundingBox.copy(worldColliderBox);
+    
+    portElements.filter(el => el.type === 'pier').forEach(pierEl => {
+        pierEl.mesh.updateWorldMatrix(true, false);
+        if (!pierEl.mesh.geometry.boundingBox) pierEl.mesh.geometry.computeBoundingBox();
+        const pierBox = pierEl.mesh.geometry.boundingBox.clone();
+        pierBox.applyMatrix4(pierEl.mesh.matrixWorld);
+        if (tugState.boundingBox.intersectsBox(pierBox)) {
+             const overlap = new THREE.Vector3();
+             const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
+             const pierCenter = pierBox.getCenter(new THREE.Vector3());
+             overlap.subVectors(tugCenter, pierCenter);
+
+             const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
+             const pierSize = pierBox.getSize(new THREE.Vector3());
+
+             const overlapX = (tugSize.x / 2) + (pierSize.x / 2) - Math.abs(overlap.x);
+             const overlapZ = (tugSize.z / 2) + (pierSize.z / 2) - Math.abs(overlap.z);
+
+             if(overlapX > 0 && overlapZ > 0){
+                if (overlapX < overlapZ) {
+                    tugState.position.x += overlapX * Math.sign(overlap.x);
+                    tugState.velocity.x *= -0.5;
+                } else {
+                    tugState.position.z += overlapZ * Math.sign(overlap.z);
+                    tugState.velocity.z *= -0.5;
+                }
+             }
+        }
+    });
+
+    buoys.forEach(buoy => {
+        if (tugState.boundingBox.intersectsSphere(buoy.collider)) {
+            const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
+            const buoyCenter = buoy.collider.center;
+            
+            const normal = new THREE.Vector3().subVectors(tugCenter, buoyCenter).normalize();
+            
+            const pushForceToTug = normal.clone().multiplyScalar(0.1);
+            tugState.velocity.add(pushForceToTug);
+
+            const pushForceToBuoy = normal.clone().multiplyScalar(-0.8);
+            buoy.velocity.add(pushForceToBuoy);
+        }
+    });
+}
+
+function updateCamera(dt) {
+    if (currentView === 'orbit') {
+        controls.update();
+        return;
+    }
+
+    const view = cameraViews[currentView];
+    
+    const desiredPos = view.pos.clone().applyMatrix4(cgPivot.matrixWorld);
+    const desiredTarget = view.target.clone().applyMatrix4(cgPivot.matrixWorld);
+    
+    const lerpFactor = Math.min(dt * 5.0, 1.0);
+    camera.position.lerp(desiredPos, lerpFactor);
+    controls.target.lerp(desiredTarget, lerpFactor);
+}
+
+function updateScene() {
+    const newPos = tugState.position.clone();
+    newPos.y = waterlineY;
+    cgPivot.position.copy(newPos);
+    cgPivot.rotation.y = tugState.yaw;
+
+    const speedKnots = tugState.velocity.length() * 1.94384; 
+    const headingDeg = (THREE.MathUtils.radToDeg(tugState.yaw) % 360 + 360) % 360;
+    const yawRateDps = THREE.MathUtils.radToDeg(tugState.yawRate);
+    ui.statusSpeed.textContent = `${speedKnots.toFixed(2)} nós`;
+    ui.statusHeading.textContent = `${headingDeg.toFixed(1)} °`;
+    ui.statusYawRate.textContent = `${yawRateDps.toFixed(2)} °/s`;
+}
+
+function updateMooringButtonsState() {
+     if (!cgPivot || isConstructionMode) return;
+    const mooringBollards = portElements.filter(el => el.type === 'bollard');
+
+    if (!mooringState.bow.isMoored) {
+        let isNearBollard = false;
+        if(mooringBollards.length > 0){
+            const mooringPointWorld = cgPivot.localToWorld(mooringState.bow.mooringPoint.clone());
+            for(const bollardEl of mooringBollards){
+                 const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                 if(mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD){
+                    isNearBollard = true;
+                    break;
+                 }
+            }
+        }
+        ui.moorBow.disabled = !isNearBollard;
+    }
+
+    if (!mooringState.stern.isMoored) {
+        let isNearBollard = false;
+        if(mooringBollards.length > 0){
+            const mooringPointWorld = cgPivot.localToWorld(mooringState.stern.mooringPoint.clone());
+            for(const bollardEl of mooringBollards){
+                 const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                 if(mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD){
+                    isNearBollard = true;
+                    break;
+                 }
+            }
+        }
+        ui.moorStern.disabled = !isNearBollard;
+    }
+}
+
+function setupConstructionControls() {
+    ui.toggleConstructionMode.addEventListener('click', () => {
+        isConstructionMode = !isConstructionMode;
+        if (isConstructionMode) {
+            enterConstructionMode();
+        } else {
+            exitConstructionMode();
+        }
+    });
+
+    ui.structureElevation.addEventListener('input', (e) => {
+        const elevation = parseFloat(e.target.value);
+        constructionSettings.elevation = elevation;
+        ui.valStructureElevation.textContent = elevation.toFixed(1);
+    });
+    
+    ui.structureRotation.addEventListener('input', (e) => {
+        const rotation = parseFloat(e.target.value);
+        constructionSettings.rotation = rotation;
+        ui.valStructureRotation.textContent = rotation.toFixed(0);
+        if (ghostObject) {
+            ghostObject.rotation.y = THREE.MathUtils.degToRad(rotation);
+        }
+    });
+
+    ui.addPier.addEventListener('click', () => startPlacement('pier'));
+    ui.addBollard.addEventListener('click', () => startPlacement('bollard'));
+    ui.clearPort.addEventListener('click', clearPort);
+    const clearLevelsBtn = document.getElementById('clearLevelsBtn');
+    if (clearLevelsBtn) {
+        clearLevelsBtn.addEventListener('click', () => { clearPort(); clearBuoys(); });
+    }
+}
+
+function enterConstructionMode() {
+    tugState.isPaused = true;
+    ui.toggleConstructionMode.textContent = 'Sair do Modo de Construção';
+    ui.toggleConstructionMode.classList.remove('btn-warn');
+    ui.toggleConstructionMode.classList.add('btn-danger');
+    ui.constructionOptions.style.display = 'grid'; 
+    constructionGrid.visible = true;
+    controls.enableRotate = false;
+}
+
+function exitConstructionMode() {
+    tugState.isPaused = false;
+    ui.toggleConstructionMode.textContent = 'Entrar no Modo de Construção';
+    ui.toggleConstructionMode.classList.add('btn-warn');
+    ui.toggleConstructionMode.classList.remove('btn-danger');
+    ui.constructionOptions.style.display = 'none'; 
+    constructionGrid.visible = false;
+    controls.enableRotate = true;
+    cancelPlacement();
+}
+
+function startPlacement(type) {
+    cancelPlacement(); 
+    placementMode = type;
+
+    let geometry, material;
+    if (type === 'pier') {
+        geometry = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
+        material = new THREE.MeshStandardMaterial({ color: 0x605040, transparent: true, opacity: 0.6 });
+    } else { // bollard
+        geometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
+        material = new THREE.MeshStandardMaterial({ color: 0x404040, transparent: true, opacity: 0.6 });
+    }
+    ghostObject = new THREE.Mesh(geometry, material);
+    ghostObject.rotation.y = THREE.MathUtils.degToRad(constructionSettings.rotation);
+    scene.add(ghostObject);
+}
+
+function cancelPlacement() {
+    if (ghostObject) {
+        scene.remove(ghostObject);
+        ghostObject.geometry.dispose();
+        ghostObject.material.dispose();
+        ghostObject = null;
+    }
+    placementMode = null;
+}
+
+function createPortObjectMesh(type, elevation) {
+    let geometry, material;
+    if (type === 'pier') {
+        geometry = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
+        material = new THREE.MeshStandardMaterial({ color: 0x605040 });
+    } else { // bollard
+        geometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
+        material = new THREE.MeshStandardMaterial({ color: 0x404040 });
+    }
+    const mesh = new THREE.Mesh(geometry, material);
+    return mesh;
+}
+
+function placeObject(position) {
+    if (!placementMode) return; // Sai se nenhum modo de construção estiver ativo
+    const newMesh = createPortObjectMesh(placementMode, constructionSettings.elevation);
+    newMesh.position.x = position.x;
+    newMesh.position.y = position.y;
+    newMesh.position.z = position.z;
+    newMesh.rotation.y = THREE.MathUtils.degToRad(constructionSettings.rotation);
+    scene.add(newMesh);
+
+    portElements.push({
+        id: THREE.MathUtils.generateUUID(),
+        type: placementMode,
+        mesh: newMesh,
+    });
+
+    cancelPlacement();
+}
+
+function clearPort() {
+    portElements.forEach(el => {
+        scene.remove(el.mesh);
+        el.mesh.geometry.dispose();
+        el.mesh.material.dispose();
+    });
+    portElements = [];
+}
+
+
+function onPointerMove(event) {
+    if (!isConstructionMode || !placementMode) return;
+    
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersectPoint = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(seaPlane, intersectPoint)) {
+        ghostObject.position.x = Math.round(intersectPoint.x * 2) / 2;
+        ghostObject.position.z = Math.round(intersectPoint.z * 2) / 2;
+        
+        ghostObject.rotation.y = THREE.MathUtils.degToRad(constructionSettings.rotation);
+
+        if(placementMode === 'pier') {
+            ghostObject.position.y = constructionSettings.elevation - 0.75;
+        } else if (placementMode === 'bollard') {
+            ghostObject.position.y = constructionSettings.elevation + 0.4;
+        }
+    }
+}
+
+function onPointerDown(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersectPoint = new THREE.Vector3();
+
+    if (isConstructionMode) {
+        if (placementMode) {
+            placeObject(ghostObject.position);
+        }
+    } else if (activeBuoyColor) {
+        if (raycaster.ray.intersectPlane(seaPlane, intersectPoint)) {
+            createBuoy(intersectPoint, activeBuoyColor);
+        }
+        activeBuoyColor = null;
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 1 / 30); 
+
+    if(!tugState.isPaused) {
+        updateBuoys(dt);
+        checkCollisions();
+        updatePhysics(dt);
+        updateScene();
+        updateMooringButtonsState();
+    }
+    
+    updateCamera(dt);
+    renderer.render(scene, camera);
+}
+
+init();
+
+window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
