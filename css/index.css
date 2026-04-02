@@ -1,45 +1,103 @@
-/* 
-  Título: index.css
-  Autor: Charlie Bravo
-  Data da última modificação: 02/04/2026 09:25
-  Versão: 1.0
-  Descrição: Estilos da página de apresentação inicial (Landing Page)
-*/
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ====================== RESET & FONTS ====================== */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
-/* ====================== LAYOUT GERAL ====================== */
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #0e1217;
-    color: #e9ecef;
+    background-color: #050b14;
+    font-family: 'Inter', sans-serif;
+    color: #e2e8f0;
+    overflow-x: hidden;
 }
+h1, h2, h3, h4 {
+    font-family: 'Outfit', sans-serif;
+}
+.bg-hero-pattern {
+    background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.1), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%);
+    background-color: #050b14;
+}
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.glass-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 15px 35px rgba(6, 182, 212, 0.15), 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.glow-button {
+    position: relative;
+    z-index: 1;
+}
+.glow-button::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    background: linear-gradient(45deg, #06b6d4, #3b82f6, #06b6d4, #3b82f6);
+    z-index: -1;
+    border-radius: 14px;
+    background-size: 300%;
+    animation: glowing 4s linear infinite;
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+}
+.glow-button:hover::before {
+    opacity: 1;
+}
+
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    50% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+}
+
+.text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(90deg, #38bdf8, #818cf8);
+}
+
+/* Tabs */
 .tab-button {
     transition: all 0.3s ease;
     border-bottom: 2px solid transparent;
 }
 .tab-button.active {
-    color: #3498db;
-    border-bottom-color: #3498db;
+    color: #38bdf8;
+    border-bottom-color: #38bdf8;
+    text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
 }
 .content-panel {
     display: none;
+    animation: fadeIn 0.4s ease-out forwards;
 }
 .content-panel.active {
     display: block;
-    animation: fadeIn 0.5s ease-in-out;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
-.card {
-    background-color: #1a2a3a;
-    border: 1px solid #34495e;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+/* Floating animation */
+.float-anim {
+    animation: float 6s ease-in-out infinite;
 }
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
 }
