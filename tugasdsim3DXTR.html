@@ -36,7 +36,7 @@
     </div>
     
     <!-- PAINEL DE DEBUG FÍSICA -->
-    <div id="debug-log-panel" style="position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;padding:12px;font-size:13px;z-index:9999;border:1px solid #333;pointer-events:none; border-radius: 8px;">
+    <div id="debug-log-panel" class="popup-panel" style="display:none; position:fixed;bottom:10px;left:10px; right:auto; top:auto; width: auto; background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;padding:12px;font-size:13px;z-index:9999;border:1px solid #333;pointer-events:none; border-radius: 8px;">
         Aguardando Física...
     </div>
 
@@ -299,6 +299,7 @@
 
     <div id="right-sidebar">
         <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD">🕹️</button>
+        <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos">🧮</button>
         <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação">⚓</button>
         <button class="sidebar-btn" data-panel-id="panel-maneuvers" title="Manobras">🗺️</button>
         <button class="sidebar-btn" data-panel-id="panel-adjustments" title="Ajustes & Status">📊</button>
