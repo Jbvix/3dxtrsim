@@ -65,8 +65,8 @@ const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
 const shipPhysics = {
     mass: 5000000, 
     momentOfInertia: 150000000, 
-    linearDamping: 0.995, 
-    angularDamping: 0.995,
+    linearDamping: 0.9997, 
+    angularDamping: 0.998,
     windCoefficient: 8000,
     currentCoefficient: 150000,
     windLeverArm: 10,
