@@ -666,13 +666,13 @@ function updateVisuals(totalForce) {
     const windVector = new THREE.Vector3(Math.sin(windDirRad), 0, Math.cos(windDirRad));
     windArrow.setDirection(windVector);
     windArrow.setLength(environmentControls.wind.strength * 0.2, 1.5, 1);
-    windArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 8, 0));
+    windArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 10, 0));
 
     const currentDirRad = THREE.MathUtils.degToRad(environmentControls.current.direction);
     const currentVector = new THREE.Vector3(Math.sin(currentDirRad), 0, Math.cos(currentDirRad));
     currentArrow.setDirection(currentVector);
     currentArrow.setLength(environmentControls.current.strength * 2.0, 1.5, 1);
-    currentArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 0.2, 0));
+    currentArrow.position.copy(tugState.position).add(new THREE.Vector3(0, 12, 0));
 
 
     for (const type of ['bow', 'stern']) {
