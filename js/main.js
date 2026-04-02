@@ -805,8 +805,8 @@ function setupUIEvents() {
             shipControls.draft = draftVal;
             ui.valShipDraft.textContent = draftVal.toFixed(1);
             
-            // Mapear calado de 5m (10k ton) a 15m (60k ton)
-            const pct = (draftVal - 5.0) / 10.0;
+            // Mapear calado de 5m (10k ton) a 10m (60k ton)
+            const pct = (draftVal - 5.0) / 5.0;
             shipPhysics.mass = 10000000 + (pct * 50000000);
             shipPhysics.momentOfInertia = 150000000 + (pct * 600000000);
             
