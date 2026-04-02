@@ -667,6 +667,7 @@ function updateMooringPoints() {
 
 function makeDraggable(panel) {
     const header = panel.querySelector('.panel-header');
+    if (!header) return; // Panels without headers aren't draggable
     let isDragging = false;
     let offset = new THREE.Vector2();
 
