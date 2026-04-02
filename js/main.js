@@ -1294,20 +1294,22 @@ function updatePhysics(dt) {
     const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); // 30 ton max thrust
     totalShipForce.add(engineForce);
     
-    // Bow Thruster Force (lateral thrust at the bow)
+    // Bow Thruster Force (lateral thrust at the bow limitando em 5 toneladas para um cargo em vez das 10 da lancha)
     const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipPhysics.isZAxisLonger ? -Math.PI/2 : Math.PI/2);
-    const bowThrusterForce = shipRightDir.clone().multiplyScalar((shipControls.bowThruster / 100.0) * 100000); // 10 ton transverse mapping
+    const bowThrusterForce = shipRightDir.clone().multiplyScalar((shipControls.bowThruster / 100.0) * 50000); 
     totalShipForce.add(bowThrusterForce);
     
-    // Torque from Bow Thruster (assuming lever arm of 60 meters forward of CG)
-    totalShipTorque -= (shipControls.bowThruster / 100.0) * 100000 * 60; // Turn yaw
+    // Torque from Bow Thruster (lever arm of 60m)
+    totalShipTorque -= (shipControls.bowThruster / 100.0) * 50000 * 60; 
     
-    // Torque from Rudder (rudder turn requires flow speed, either from ship moving or prop wash)
-    const effectiveWaterFlow = Math.abs(shipState.velocity.length()) + Math.max(0, (shipControls.engine / 100.0) * 3.0);
+    // Torque from Rudder (Prop Wash bem menor (1.5) pra não gerar giro insano parado e fluxo de agua dominante)
+    // Velocidade forward pura + lavagem de helice
+    const forwardSpeed = Math.abs(shipState.velocity.dot(shipForwardDir));
+    const effectiveWaterFlow = forwardSpeed + Math.max(0, (shipControls.engine / 100.0) * 1.5);
     const rudderAngleRad = THREE.MathUtils.degToRad(-shipControls.rudder);
     
-    // Large lever arm in the back (e.g. 60m)
-    const rudderTorque = rudderAngleRad * effectiveWaterFlow * 25000000;
+    // Multiplicador foi reduzido de 25M pra 400 Mil. Um cargo demora ate 2 minutos pra fazer uma curva fechada
+    const rudderTorque = rudderAngleRad * effectiveWaterFlow * 400000;
     totalShipTorque += rudderTorque;
     
     // NOVIDADE: Ação de Pivot Físico REAL based on Diagrama (Força lateral empurra a popa pra fora, causando Deriva)
