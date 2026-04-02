@@ -482,23 +482,29 @@ function loadCargoShip() {
     
     const onModelLoad = (ship) => {
         const bbox = new THREE.Box3().setFromObject(ship);
-        // Calcula um BoundingBox rigoroso apenas com Malhas Visíveis
-        // Ignora Câmeras nativas do GLTF, Luzes, Ossos (Bones) estendidos infinitos que corrompem o Bounding Box!
+        
+        // Identifica o Casco Principal (Maior Malha do Navio em Volume)
+        // Isso ignora completamente malhas menores como guindastes e antenas laterais
         const realBox = new THREE.Box3();
-        let boxInitialized = false;
+        let maxVolume = 0;
+        let foundHull = false;
+        
         ship.traverse((child) => {
             if (child.isMesh && child.visible) {
                 if (child.material && child.material.opacity === 0) return;
                 const childBox = new THREE.Box3().setFromObject(child);
-                if (!boxInitialized) {
+                const cSize = childBox.getSize(new THREE.Vector3());
+                const volume = cSize.x * cSize.y * cSize.z;
+                
+                // O casco será sempre a malha com o maior volume interno
+                if (volume > maxVolume) {
+                    maxVolume = volume;
                     realBox.copy(childBox);
-                    boxInitialized = true;
-                } else {
-                    realBox.union(childBox);
+                    foundHull = true;
                 }
             }
         });
-        if (!boxInitialized) realBox.setFromObject(ship);
+        if (!foundHull) realBox.copy(bbox);
 
         const center = realBox.getCenter(new THREE.Vector3());
         
@@ -521,10 +527,17 @@ function loadCargoShip() {
         // Usa `size` (já blindado contra lixo via `realBox`)
         const isZAxisLongerCollider = size.z > size.x;
         const shipLength = isZAxisLongerCollider ? size.z * 0.95 : size.x * 0.95;
-        // Ajuste: Aumentar largura para fechar o corpo de 0.5 para 0.9. (O Vazio já foi eliminado filtrando o lixo 3D do realBox)
-        const shipWidth = isZAxisLongerCollider ? size.x * 0.98 : size.z * 0.98; 
+        
+        // Blindagem Marítima Anti-Guindaste Fundido: 
+        // A boca (largura) de um navio nunca ultrapassa ~22% do seu comprimento longo.
+        // O Math.min garante que os guindastes sejam fatiados na matrix física!
+        let rawWidth = isZAxisLongerCollider ? size.x : size.z;
+        const shipWidth = Math.min(rawWidth, shipLength * 0.22) * 0.90; 
+        
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
-        const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
+        
+        // DEIXANDO VISÍVEL TEMPORARIAMENTE PARA VALIDAÇÃO GEOMÉTRICA DO USUARIO
+        const colliderMat = new THREE.MeshBasicMaterial({ visible: true, wireframe: true, color: 0x00ff00 });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
         
         // Como o navio foi perfeitamente centralizado, o collider também fica no zero
