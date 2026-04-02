@@ -16,10 +16,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 // ===== Variáveis Globais =====
 let scene, camera, renderer, controls, clock;
-let hullGroup, cgPivot; 
-let tug, tugCollider; 
-let shipGroup, shipColliderMesh; 
-let waterlineY = 2.0; 
+let hullGroup, cgPivot;
+let tug, tugCollider;
+let shipGroup, shipColliderMesh;
+let waterlineY = 2.0;
 let portThrusterArrow, starboardThrusterArrow, resultantForceArrow;
 let windArrow, currentArrow;
 let bowLine, sternLine;
@@ -39,8 +39,8 @@ const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tugState = {
     position: new THREE.Vector3(0, 0, 0),
     velocity: new THREE.Vector3(0, 0, 0),
-    yaw: 0, 
-    yawRate: 0, 
+    yaw: 0,
+    yawRate: 0,
     boundingBox: new THREE.Box3(),
     isPaused: false,
 };
@@ -64,9 +64,9 @@ const shipState = {
 const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
 const shipControls = { engine: 0, rudder: 0, bowThruster: 0, draft: 5.0 };
 const shipPhysics = {
-    mass: 10000000, 
-    momentOfInertia: 150000000, 
-    linearDamping: 0.9997, 
+    mass: 10000000,
+    momentOfInertia: 150000000,
+    linearDamping: 0.9997,
     angularDamping: 0.998,
     windCoefficient: 8000,
     currentCoefficient: 150000,
@@ -75,7 +75,7 @@ const shipPhysics = {
 };
 
 const asdControls = {
-    port:      { angle: 0, thrust: 0 },
+    port: { angle: 0, thrust: 0 },
     starboard: { angle: 0, thrust: 0 }
 };
 
@@ -85,10 +85,10 @@ const environmentControls = {
 };
 
 const physics = {
-    mass: 100000, 
-    momentOfInertia: 3350000, 
-    maxThrust: 294210.0, 
-    linearDamping: 0.98, 
+    mass: 100000,
+    momentOfInertia: 3350000,
+    maxThrust: 294210.0,
+    linearDamping: 0.98,
     angularDamping: 0.98,
     thrusterOffset: { x: 1.5, z: -5.0 },
     lineStiffness: 20000.0,
@@ -110,10 +110,10 @@ let savedManeuvers = JSON.parse(localStorage.getItem('savedManeuvers')) || [];
 
 // ===== Sandbox de Construção =====
 let isConstructionMode = false;
-let placementMode = null; 
+let placementMode = null;
 let ghostObject = null;
 let constructionGrid;
-let portElements = []; 
+let portElements = [];
 let buoys = [];
 let activeBuoyColor = null;
 const constructionSettings = {
@@ -216,10 +216,10 @@ function init() {
     scene.background = new THREE.Color(0x121723);
     clock = new THREE.Clock();
 
-    camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2000);
+    camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
     camera.position.set(20, 15, 20);
 
-    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(innerWidth, innerHeight);
     document.getElementById('app').appendChild(renderer.domElement);
     renderer.domElement.addEventListener('pointerdown', onPointerDown, false);
@@ -229,10 +229,10 @@ function init() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    const sea = new THREE.Mesh( new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color:0x2088aa, metalness:.7, roughness:.25}) );
-    sea.rotation.x = -Math.PI/2;
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x2088aa, metalness: .7, roughness: .25 }));
+    sea.rotation.x = -Math.PI / 2;
     scene.add(sea);
-    
+
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
@@ -247,198 +247,198 @@ function init() {
     hullGroup = new THREE.Group();
     cgPivot.add(hullGroup);
 
-    const cgMarker = new THREE.Mesh(new THREE.SphereGeometry(0.15,24,16), new THREE.MeshBasicMaterial({color:0xffcc00}));
+    const cgMarker = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
     cgPivot.add(cgMarker);
-    
+
     constructionGrid = new THREE.GridHelper(500, 100, 0x444444, 0x444444);
     constructionGrid.position.y = 0.01;
     constructionGrid.visible = false;
     scene.add(constructionGrid);
     // ===== INÍCIO DO CÓDIGO A SER ADICIONADO =====
 
-function loadLevel(level) {
-    console.log(`Carregando Nível: "${level.name}"`);
-    
-    // 1. Limpar o cenário atual
-    clearPort();
-    clearBuoys();
+    function loadLevel(level) {
+        console.log(`Carregando Nível: "${level.name}"`);
 
-    // 2. Posicionar o Rebocador no estado inicial
-    const initialState = level.initialTugState;
-    tugState.position.set(initialState.position.x, initialState.position.y, initialState.position.z);
-    tugState.velocity.set(0, 0, 0);
-    tugState.yaw = THREE.MathUtils.degToRad(initialState.yaw);
-    tugState.yawRate = 0;
-    
-    // 3. Configurar as Condições Ambientais
-    const env = level.environment;
-    ui.windStrength.value = env.wind.strength;
-    ui.windDirection.value = env.wind.direction;
-    ui.currentStrength.value = env.current.strength;
-    ui.currentDirection.value = env.current.direction;
-    // Dispara o evento 'input' para que a UI e a física sejam atualizadas com os novos valores
-    ['windStrength', 'windDirection', 'currentStrength', 'currentDirection'].forEach(id => ui[id].dispatchEvent(new Event('input')));
+        // 1. Limpar o cenário atual
+        clearPort();
+        clearBuoys();
 
-    // 4. Construir os Elementos do Porto (Cais, Cabeços)
-    if (level.portElements) {
-        level.portElements.forEach(elementData => {
-            placeObjectFromData(elementData); 
+        // 2. Posicionar o Rebocador no estado inicial
+        const initialState = level.initialTugState;
+        tugState.position.set(initialState.position.x, initialState.position.y, initialState.position.z);
+        tugState.velocity.set(0, 0, 0);
+        tugState.yaw = THREE.MathUtils.degToRad(initialState.yaw);
+        tugState.yawRate = 0;
+
+        // 3. Configurar as Condições Ambientais
+        const env = level.environment;
+        ui.windStrength.value = env.wind.strength;
+        ui.windDirection.value = env.wind.direction;
+        ui.currentStrength.value = env.current.strength;
+        ui.currentDirection.value = env.current.direction;
+        // Dispara o evento 'input' para que a UI e a física sejam atualizadas com os novos valores
+        ['windStrength', 'windDirection', 'currentStrength', 'currentDirection'].forEach(id => ui[id].dispatchEvent(new Event('input')));
+
+        // 4. Construir os Elementos do Porto (Cais, Cabeços)
+        if (level.portElements) {
+            level.portElements.forEach(elementData => {
+                placeObjectFromData(elementData);
+            });
+        }
+
+        // 5. Adicionar as Bóias
+        if (level.buoys) {
+            level.buoys.forEach(buoyData => {
+                const position = new THREE.Vector3(buoyData.position.x, 0, buoyData.position.z);
+                createBuoy(position, buoyData.color);
+            });
+        }
+
+        // Garante que a posição visual do rebocador seja atualizada imediatamente
+        cgPivot.position.copy(tugState.position);
+        cgPivot.rotation.y = tugState.yaw;
+
+        // Opcional: Fechar o painel de níveis após a seleção
+        document.getElementById('panel-levels').style.display = 'none';
+
+        // Garante que o rebocador não esteja em modo pausado de construção
+        if (isConstructionMode) {
+            exitConstructionMode();
+        }
+        tugState.isPaused = false;
+
+        // Garante que a rotação da câmera orbital esteja sempre habilitada ao carregar um nível
+        controls.enableRotate = true;
+    }
+
+    // Função auxiliar para criar objetos do porto a partir dos dados do nível
+    function placeObjectFromData(data) {
+        let newMesh;
+        const objectRotation = THREE.MathUtils.degToRad(data.rotation);
+
+        if (data.type === 'pier') {
+            const pierGeo = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
+            const pierMat = new THREE.MeshStandardMaterial({ color: 0x605040, metalness: 0.1, roughness: 0.8 });
+            newMesh = new THREE.Mesh(pierGeo, pierMat);
+            newMesh.position.y = data.position.y - 0.75;
+        } else { // 'bollard'
+            const bollardGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
+            const bollardMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.5 });
+            newMesh = new THREE.Mesh(bollardGeo, bollardMat);
+            newMesh.position.y = data.position.y + 0.4;
+        }
+
+        newMesh.position.x = data.position.x;
+        newMesh.position.z = data.position.z;
+        newMesh.rotation.y = objectRotation;
+        scene.add(newMesh);
+
+        portElements.push({
+            id: THREE.MathUtils.generateUUID(),
+            type: data.type,
+            mesh: newMesh,
         });
     }
 
-    // 5. Adicionar as Bóias
-    if (level.buoys) {
-        level.buoys.forEach(buoyData => {
-            const position = new THREE.Vector3(buoyData.position.x, 0, buoyData.position.z);
-            createBuoy(position, buoyData.color);
-        });
-    }
-
-    // Garante que a posição visual do rebocador seja atualizada imediatamente
-    cgPivot.position.copy(tugState.position);
-    cgPivot.rotation.y = tugState.yaw;
-    
-    // Opcional: Fechar o painel de níveis após a seleção
-    document.getElementById('panel-levels').style.display = 'none';
-    
-    // Garante que o rebocador não esteja em modo pausado de construção
-    if(isConstructionMode) {
-      exitConstructionMode();
-    }
-    tugState.isPaused = false;
-
-    // Garante que a rotação da câmera orbital esteja sempre habilitada ao carregar um nível
-    controls.enableRotate = true;
-}
-
-// Função auxiliar para criar objetos do porto a partir dos dados do nível
-function placeObjectFromData(data) {
-    let newMesh;
-    const objectRotation = THREE.MathUtils.degToRad(data.rotation);
-
-    if (data.type === 'pier') {
-        const pierGeo = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
-        const pierMat = new THREE.MeshStandardMaterial({ color: 0x605040, metalness: 0.1, roughness: 0.8 });
-        newMesh = new THREE.Mesh(pierGeo, pierMat);
-        newMesh.position.y = data.position.y - 0.75;
-    } else { // 'bollard'
-        const bollardGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
-        const bollardMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.5 });
-        newMesh = new THREE.Mesh(bollardGeo, bollardMat);
-        newMesh.position.y = data.position.y + 0.4;
-    }
-
-    newMesh.position.x = data.position.x;
-    newMesh.position.z = data.position.z;
-    newMesh.rotation.y = objectRotation;
-    scene.add(newMesh);
-
-    portElements.push({
-        id: THREE.MathUtils.generateUUID(),
-        type: data.type,
-        mesh: newMesh,
-    });
-}
-
-// ===== FIM DO CÓDIGO A SER ADICIONADO =====
+    // ===== FIM DO CÓDIGO A SER ADICIONADO =====
     loadModel();
     createVisuals();
     setupUIEvents();
     // Adicionar dentro de setupUIEvents()
-const levelData = {
-  "nivel-1": {
-    name: "Nível 1: Atracação Básica",
-    description: "Atraque o rebocador ao cais. Condições ideais, sem obstáculos.",
-    initialTugState: { position: { x: 0, y: 0, z: 50 }, yaw: 180 },
-    environment: { wind: { strength: 0, direction: 0 }, current: { strength: 0, direction: 0 } },
-    portElements: [
-      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
-        { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
-      
-    ],
-    buoys: []
-  },
-  "nivel-2": {
-    name: "Nível 2: Canal de Boias Reto",
-    description: "Navegue pelo canal de boias e aproxime-se do cais.",
-    initialTugState: { position: { x: 0, y: 0, z: 150 }, yaw: 180 },
-    environment: { wind: { strength: 5, direction: 90 }, current: { strength: 0, direction: 0 } },
-    portElements: [
-      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
-    ],
-    buoys: [
-      { color: 'green', position: { x: -10, z: 120 } }, { color: 'red', position: { x: 10, z: 120 } },
-      { color: 'green', position: { x: -10, z: 90 } },  { color: 'red', position: { x: 10, z: 90 } },
-      { color: 'green', position: { x: -10, z: 60 } },  { color: 'red', position: { x: 10, z: 60 } }
-    ]
-  },
-  "nivel-3a": {
-    name: "Nível 3: Curva com Vento a Favor",
-    description: "Navegue pelo canal sinuoso até o cais, com vento empurrando para o berço.",
-    initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
-    environment: { wind: { strength: 15, direction: 270 }, current: { strength: 0, direction: 0 } },
-    portElements: [
-      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
-    ],
-    buoys: [
-      {"color": "red",   "position": {"x": 87, "z": 85}},
-      {"color": "green", "position": {"x": 57, "z": 85}},
-      {"color": "red",   "position": {"x": 75, "z": 65}},
-      {"color": "green", "position": {"x": 45, "z": 65}},
-      {"color": "red",   "position": {"x": 57, "z": 48}},
-      {"color": "green", "position": {"x": 27, "z": 48}},
-      {"color": "red",   "position": {"x": 35, "z": 35}},
-      {"color": "green", "position": {"x": 5, "z": 35}},
-     
-    ]
-  },
-  "nivel-3b": {
-    name: "Nível 3: Curva com Corrente Contra",
-    description: "Mesmo percurso, mas agora com corrente contrária à atracação.",
-    initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
-    environment: { wind: { strength: 0, direction: 0 }, current: { strength: 1.5, direction: 90 } },
-    portElements: [
-      { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
-      { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
-      
-    ],
-    buoys: [
-      {"color": "red",   "position": {"x": 87, "z": 85}},
-      {"color": "green", "position": {"x": 57, "z": 85}},
-      {"color": "red",   "position": {"x": 75, "z": 65}},
-      {"color": "green", "position": {"x": 45, "z": 65}},
-      {"color": "red",   "position": {"x": 57, "z": 48}},
-      {"color": "green", "position": {"x": 27, "z": 58}},
-      {"color": "red",   "position": {"x": 35, "z": 35}},
-      {"color": "green", "position": {"x": 1, "z": 45}},
-      {"color": "red",   "position": {"x": 17, "z": 25}},
-      {"color": "green", "position": {"x": -13, "z": 35}}
-    ]
-  }
-};
+    const levelData = {
+        "nivel-1": {
+            name: "Nível 1: Atracação Básica",
+            description: "Atraque o rebocador ao cais. Condições ideais, sem obstáculos.",
+            initialTugState: { position: { x: 0, y: 0, z: 50 }, yaw: 180 },
+            environment: { wind: { strength: 0, direction: 0 }, current: { strength: 0, direction: 0 } },
+            portElements: [
+                { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
 
-document.getElementById('level-buttons').addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-        const levelId = e.target.getAttribute('data-level-id');
-        if (levelData[levelId]) {
-           loadLevel(levelData[levelId]);
+            ],
+            buoys: []
+        },
+        "nivel-2": {
+            name: "Nível 2: Canal de Boias Reto",
+            description: "Navegue pelo canal de boias e aproxime-se do cais.",
+            initialTugState: { position: { x: 0, y: 0, z: 150 }, yaw: 180 },
+            environment: { wind: { strength: 5, direction: 90 }, current: { strength: 0, direction: 0 } },
+            portElements: [
+                { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 }
+            ],
+            buoys: [
+                { color: 'green', position: { x: -10, z: 120 } }, { color: 'red', position: { x: 10, z: 120 } },
+                { color: 'green', position: { x: -10, z: 90 } }, { color: 'red', position: { x: 10, z: 90 } },
+                { color: 'green', position: { x: -10, z: 60 } }, { color: 'red', position: { x: 10, z: 60 } }
+            ]
+        },
+        "nivel-3a": {
+            name: "Nível 3: Curva com Vento a Favor",
+            description: "Navegue pelo canal sinuoso até o cais, com vento empurrando para o berço.",
+            initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
+            environment: { wind: { strength: 15, direction: 270 }, current: { strength: 0, direction: 0 } },
+            portElements: [
+                { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
+            ],
+            buoys: [
+                { "color": "red", "position": { "x": 87, "z": 85 } },
+                { "color": "green", "position": { "x": 57, "z": 85 } },
+                { "color": "red", "position": { "x": 75, "z": 65 } },
+                { "color": "green", "position": { "x": 45, "z": 65 } },
+                { "color": "red", "position": { "x": 57, "z": 48 } },
+                { "color": "green", "position": { "x": 27, "z": 48 } },
+                { "color": "red", "position": { "x": 35, "z": 35 } },
+                { "color": "green", "position": { "x": 5, "z": 35 } },
+
+            ]
+        },
+        "nivel-3b": {
+            name: "Nível 3: Curva com Corrente Contra",
+            description: "Mesmo percurso, mas agora com corrente contrária à atracação.",
+            initialTugState: { position: { x: 80, y: 0, z: 100 }, yaw: 225 },
+            environment: { wind: { strength: 0, direction: 0 }, current: { strength: 1.5, direction: 90 } },
+            portElements: [
+                { type: 'pier', position: { x: 0, y: 1.0, z: 0 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: -15 }, rotation: 0 },
+                { type: 'bollard', position: { x: -3.5, y: 1.4, z: 15 }, rotation: 0 }
+
+            ],
+            buoys: [
+                { "color": "red", "position": { "x": 87, "z": 85 } },
+                { "color": "green", "position": { "x": 57, "z": 85 } },
+                { "color": "red", "position": { "x": 75, "z": 65 } },
+                { "color": "green", "position": { "x": 45, "z": 65 } },
+                { "color": "red", "position": { "x": 57, "z": 48 } },
+                { "color": "green", "position": { "x": 27, "z": 58 } },
+                { "color": "red", "position": { "x": 35, "z": 35 } },
+                { "color": "green", "position": { "x": 1, "z": 45 } },
+                { "color": "red", "position": { "x": 17, "z": 25 } },
+                { "color": "green", "position": { "x": -13, "z": 35 } }
+            ]
         }
-    }
-});
+    };
+
+    document.getElementById('level-buttons').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const levelId = e.target.getAttribute('data-level-id');
+            if (levelData[levelId]) {
+                loadLevel(levelData[levelId]);
+            }
+        }
+    });
 
 
     updateMooringPoints();
-    
+
     // Inicia carregações
     loadModel();
     loadCargoShip();
-    
+
     animate();
 }
 
@@ -462,22 +462,22 @@ function loadModel() {
             }
         });
         if (!boxInitialized) realBox.setFromObject(modelObject);
-        
+
         const center = realBox.getCenter(new THREE.Vector3());
         modelObject.position.sub(center);
-        
+
         // A filtragem "anti-lixo" centralizou o rebocador perfeitamente no Y=0.
         // Se a água está em Y=0, metade do rebocador estava afundando!
         // Precisamos elevar ele da água baseado no tamanho real do casco (baseY).
         const size = realBox.getSize(new THREE.Vector3());
-        modelObject.position.y += size.y * 0.25; // Sobe o rebocador para nivelar a Linha d'agua
-        
+        modelObject.position.y += size.y * 0.15; // Sobe o rebocador para nivelar a Linha d'agua
+
         hullGroup.add(modelObject);
         updateCG();
 
         const scale = modelObject.scale;
         ui.scaleParams.textContent = `${scale.x.toFixed(1)}, ${scale.y.toFixed(1)}, ${scale.z.toFixed(1)}`;
-        
+
         // Colisor do Rebocador perfeitamente envelopado na malha de metal pintado
         const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false, wireframe: true });
@@ -487,13 +487,13 @@ function loadModel() {
 
     loader.load(modelPath, (gltf) => {
         tug = gltf.scene;
-        tug.scale.set(0.5, 0.5, 0.5); 
+        tug.scale.set(0.5, 0.5, 0.5);
         tug.rotation.y = -Math.PI / 2;
         onModelLoad(tug);
 
     }, undefined, (err) => {
         console.error('ERRO AO CARREGAR O MODELO:', err);
-        const fallback = new THREE.Mesh( new THREE.BoxGeometry(4, 2, 10), new THREE.MeshStandardMaterial({color:0x9999aa, metalness:.4, roughness:.6}) );
+        const fallback = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 10), new THREE.MeshStandardMaterial({ color: 0x9999aa, metalness: .4, roughness: .6 }));
         onModelLoad(fallback);
     });
 }
@@ -501,7 +501,7 @@ function loadModel() {
 function loadCargoShip() {
     const loader = new GLTFLoader();
     const modelPath = './modelo_navio/cargo_ship.glb';
-    
+
     const onModelLoad = (ship) => {
         const bbox = new THREE.Box3().setFromObject(ship);
         // Calcula um BoundingBox rigoroso apenas com Malhas Visíveis
@@ -523,24 +523,24 @@ function loadCargoShip() {
         if (!boxInitialized) realBox.setFromObject(ship);
 
         const center = realBox.getCenter(new THREE.Vector3());
-        
+
         // Centraliza de verdade o CG físico e rebaixa no Y perfeitamente, usando as medidas completas e justas!
         ship.position.sub(center);
-        
+
         shipGroup = new THREE.Group();
         shipGroup.add(ship);
-        
+
         // CRÍTICO: Usar realBox purificado para determinar o tamanho físico do colisor e da navegação vertical!
         const size = realBox.getSize(new THREE.Vector3());
-        
+
         // Elevação de 40% solicitada pelo usuário (Salva como BASE pra servir de referencia ancorada no Calado)
         shipState.baseY = size.y * 0.4;
         shipState.position.y = shipState.baseY;
         shipGroup.position.set(50, shipState.position.y, -30);
         shipGroup.rotation.y = -Math.PI / 6; // Ângulo para facilitar as abordagens
-        
+
         scene.add(shipGroup);
-        
+
         // = Colisionador Físico = (Oculto)
         // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
         const isZAxisLongerCollider = size.z > size.x;
@@ -549,30 +549,30 @@ function loadCargoShip() {
         // que corrompem a leitura geométrica da largura (Width).
         // Em Engenharia Naval, a 'Boca' (Beam) de um Cargueiro é historicamente ~1/6 do seu Comprimento.
         // Vamos forçar o colisor a ter exatamente a proporção do aço, afinando pra escala Panamax:
-        const shipWidth = shipLength / 6.6;  
+        const shipWidth = shipLength / 6.6;
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
-        
+
         // Como o navio foi perfeitamente centralizado, o collider também fica no zero
         shipCollider.position.set(0, 0, 0);
         shipGroup.add(shipCollider);
-        
+
         shipColliderMesh = shipCollider;
-        
+
         // == Ancoradouros / Cabeços do Navio ==
         const isZAxisLonger = size.z > size.x;
         shipPhysics.isZAxisLonger = isZAxisLonger;
-        
+
         // Pega tamanho absoluto só do casco em vez do bounding box com mastros e guindastes orbitando
         const realSize = realBox.getSize(new THREE.Vector3());
 
         const deckY = -(realSize.y * 0.20); // Altura típica do convés principal baseada do centro (quase waterline) 
 
         // Criando visual em amarelo chamativo só para distinguir se precisarmos
-        const bowBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0xe67e22}));
-        const sternBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
-        
+        const bowBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0xe67e22 }));
+        const sternBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0x9b59b6 }));
+
         if (isZAxisLonger) {
             bowBollard.position.set(0, deckY + 0.5, realSize.z / 2 * 0.85); // Recuado pra 0.85 (evita a quina V) e subido levemente pro Castelo
             sternBollard.position.set(0, deckY, -realSize.z / 2 * 0.95);
@@ -598,17 +598,21 @@ function loadCargoShip() {
 
 function createVisuals() {
     const arrowLength = 2.5;
-    portThrusterArrow = new THREE.ArrowHelper( new THREE.Vector3(0, 0, 1), new THREE.Vector3(physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0xff0000, 0.5, 0.5 );
-    starboardThrusterArrow = new THREE.ArrowHelper( new THREE.Vector3(0, 0, 1), new THREE.Vector3(-physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0x00ff00, 0.5, 0.5 );
+    const thrusterDepthY = -0.5; // Ficam submersos sob a linha d'água no visual
     
-    resultantForceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 0, 0x00ffff, 1.0, 0.8);
+    // Bombordo (Port) é Vermelho (0xff0000) e fica à Esquerda (-X)
+    portThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-physics.thrusterOffset.x, thrusterDepthY, physics.thrusterOffset.z), arrowLength, 0xff0000, 0.5, 0.5);
+    // Boreste (Starboard) é Verde (0x00ff00) e fica à Direita (+X)
+    starboardThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(physics.thrusterOffset.x, thrusterDepthY, physics.thrusterOffset.z), arrowLength, 0x00ff00, 0.5, 0.5);
+
+    resultantForceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 0, 0x00ffff, 1.0, 0.8);
     cgPivot.add(resultantForceArrow);
     hullGroup.add(portThrusterArrow, starboardThrusterArrow);
 
-    windArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0, 8, 0), 0, 0xffffff, 1.5, 1);
-    currentArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0, 0.2, 0), 0, 0x0000ff, 1.5, 1);
+    windArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 8, 0), 0, 0xffffff, 1.5, 1);
+    currentArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0.2, 0), 0, 0x0000ff, 1.5, 1);
     scene.add(windArrow, currentArrow);
-    
+
     const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
     const points = [new THREE.Vector3(), new THREE.Vector3()];
     const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
@@ -618,20 +622,20 @@ function createVisuals() {
     scene.add(bowLine, sternLine);
     mooringState.bow.line = bowLine;
     mooringState.stern.line = sternLine;
-    
+
     const pointGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 12);
     const bowPointMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
     const sternPointMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-    
+
     bowMooringPointMarker = new THREE.Mesh(pointGeo, bowPointMat);
     sternMooringPointMarker = new THREE.Mesh(pointGeo, sternPointMat);
-    
+
     hullGroup.add(bowMooringPointMarker);
     hullGroup.add(sternMooringPointMarker);
 }
 
 function updateVisuals(totalForce) {
-    if(tugState.isPaused) return;
+    if (tugState.isPaused) return;
 
     const portAngleRad = THREE.MathUtils.degToRad(asdControls.port.angle);
     const starboardAngleRad = THREE.MathUtils.degToRad(asdControls.starboard.angle);
@@ -640,7 +644,7 @@ function updateVisuals(totalForce) {
 
     portThrusterArrow.setDirection(portForceDir.clone().negate());
     starboardThrusterArrow.setDirection(starboardForceDir.clone().negate());
-    
+
     const forceMagnitude = totalForce.length();
     if (forceMagnitude > 1.0) {
         resultantForceArrow.visible = true;
@@ -681,7 +685,7 @@ function updateVisuals(totalForce) {
             } else {
                 const slack = state.restLength - currentLength;
                 const sag = Math.min(slack * 0.4, 8);
-                
+
                 const midPoint = new THREE.Vector3().addVectors(mooringPointWorld, bollardPoint).multiplyScalar(0.5);
                 const controlPoint = midPoint.clone().add(new THREE.Vector3(0, -sag, 0));
 
@@ -689,7 +693,7 @@ function updateVisuals(totalForce) {
                 points = curve.getPoints(20);
                 state.line.material.color.set(0x888888);
             }
-            
+
             state.line.geometry.setFromPoints(points);
             state.line.visible = true;
         }
@@ -723,7 +727,7 @@ function updateMooringPoints() {
     ui.valSternPointY.textContent = sternY.toFixed(1);
 
     if (bowMooringPointMarker && sternMooringPointMarker) {
-        bowMooringPointMarker.position.set(bowX, bowY + 0.2, bowZ); 
+        bowMooringPointMarker.position.set(bowX, bowY + 0.2, bowZ);
         sternMooringPointMarker.position.set(sternX, sternY + 0.2, sternZ);
     }
 }
@@ -767,7 +771,7 @@ function renderManeuverList() {
         const li = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = maneuver.name;
-        
+
         const execBtn = document.createElement('button');
         execBtn.textContent = 'Executar';
         execBtn.classList.add('btn-success');
@@ -804,7 +808,7 @@ function deleteManeuver(index) {
 }
 
 function setupUIEvents() {
-    if(ui.shipEngine) {
+    if (ui.shipEngine) {
         ui.shipEngine.addEventListener('input', (e) => {
             shipControls.engine = parseInt(e.target.value);
             ui.valShipEngine.textContent = shipControls.engine;
@@ -831,12 +835,12 @@ function setupUIEvents() {
             const draftVal = parseFloat(e.target.value);
             shipControls.draft = draftVal;
             ui.valShipDraft.textContent = draftVal.toFixed(1);
-            
+
             // Mapear calado de 5m (10k ton) a 15m (60k ton)
             const pct = (draftVal - 5.0) / 10.0;
             shipPhysics.mass = 10000000 + (pct * 50000000);
             shipPhysics.momentOfInertia = 150000000 + (pct * 600000000);
-            
+
             // Afundar vizualmente o navio (aprofundado mais 30% do calado a pedido do comandante)
             if (shipState.baseY !== undefined) {
                 shipState.position.y = shipState.baseY + 0.2 - (pct * 4.5);
@@ -849,19 +853,19 @@ function setupUIEvents() {
         waterlineY = parseFloat(e.target.value);
         ui.valElevationY.textContent = waterlineY.toFixed(2);
     });
-    
+
     document.getElementById('resetPosition').addEventListener('click', () => {
         tugState.position.set(0, 0, 0);
         tugState.velocity.set(0, 0, 0);
         tugState.yaw = 0;
         tugState.yawRate = 0;
-        if(mooringState.bow.isMoored) toggleMooring('bow');
-        if(mooringState.stern.isMoored) toggleMooring('stern');
+        if (mooringState.bow.isMoored) toggleMooring('bow');
+        if (mooringState.stern.isMoored) toggleMooring('stern');
     });
 
     ui.moorBow.addEventListener('click', () => toggleMooring('bow'));
     ui.moorStern.addEventListener('click', () => toggleMooring('stern'));
-    
+
     document.getElementById('moorTugBowToShipBow')?.addEventListener('click', () => toggleShipMooring('bow', 'bow'));
     document.getElementById('moorTugBowToShipStern')?.addEventListener('click', () => toggleShipMooring('bow', 'stern'));
     document.getElementById('moorTugSternToShipBow')?.addEventListener('click', () => toggleShipMooring('stern', 'bow'));
@@ -901,7 +905,7 @@ function setupUIEvents() {
     ui.valBreakingLoad.textContent = ui.breakingLoad.value;
     ui.stiffness.value = physics.lineStiffness / 1000;
     ui.valStiffness.textContent = ui.stiffness.value;
-    
+
     ui.windStrength.addEventListener('input', (e) => { environmentControls.wind.strength = parseFloat(e.target.value); ui.valWindStrength.textContent = e.target.value; });
     ui.windDirection.addEventListener('input', (e) => { environmentControls.wind.direction = parseFloat(e.target.value); ui.valWindDirection.textContent = e.target.value; });
     ui.currentStrength.addEventListener('input', (e) => { environmentControls.current.strength = parseFloat(e.target.value); ui.valCurrentStrength.textContent = parseFloat(e.target.value).toFixed(1); });
@@ -938,23 +942,23 @@ function setupUIEvents() {
             const panel = document.getElementById(panelId);
 
             const isActive = button.classList.contains('active');
-            
-            if(isActive) {
+
+            if (isActive) {
                 panel.style.display = 'none';
                 button.classList.remove('active');
             } else {
-                 panel.style.display = 'grid';
-                 button.classList.add('active');
-                 document.querySelectorAll('.popup-panel').forEach(p => p.style.zIndex = 10);
-                 panel.style.zIndex = 11;
+                panel.style.display = 'grid';
+                button.classList.add('active');
+                document.querySelectorAll('.popup-panel').forEach(p => p.style.zIndex = 10);
+                panel.style.zIndex = 11;
             }
         });
     });
-    
+
     setupBuoyControls();
     setupConstructionControls();
     renderManeuverList();
-    
+
     // --- Integração com o Painel de Controle ASD Autônomo ---
     const handleAsdControlMessage = (event) => {
         if (event.data?.type === 'asdControlState') {
@@ -1035,15 +1039,15 @@ function toggleMooring(type) {
 function toggleShipMooring(tugEnd, shipEnd) {
     const state = mooringState[tugEnd];
     if (state.isMoored) return; // Se já estiver atracado, o botão padrão "Largar" cuida do release
-    
+
     // Procura o cabeço específico do navio
     const targetBollard = portElements.find(el => el.isShipBollard && el.shipLocation === shipEnd);
-    if(!targetBollard) return;
+    if (!targetBollard) return;
 
     const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
     const worldBollardPos = targetBollard.mesh.getWorldPosition(new THREE.Vector3());
     const distance = mooringPointWorld.distanceTo(worldBollardPos);
-    
+
     // Força a atracação imediata
     state.bollard = worldBollardPos.clone();
     state.targetBollardEl = targetBollard;
@@ -1066,7 +1070,7 @@ function toggleShipMooring(tugEnd, shipEnd) {
     const winchControl = ui[tugEnd === 'bow' ? 'bowWinchControl' : 'sternWinchControl'];
     const winchSlider = ui[tugEnd === 'bow' ? 'bowLineLength' : 'sternLineLength'];
     const winchValue = ui[tugEnd === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
-    
+
     winchControl.style.display = 'block';
     button.textContent = `Largar Navio (${tugEnd === 'bow' ? 'Proa' : 'Popa'})`;
     button.classList.remove('btn-sec');
@@ -1080,32 +1084,32 @@ function toggleShipMooring(tugEnd, shipEnd) {
 }
 
 function setupBuoyControls() {
-    ui.addGreenBuoy.addEventListener('click', () => { if(!isConstructionMode) activeBuoyColor = 'green'; });
-    ui.addRedBuoy.addEventListener('click', () => { if(!isConstructionMode) activeBuoyColor = 'red'; });
+    ui.addGreenBuoy.addEventListener('click', () => { if (!isConstructionMode) activeBuoyColor = 'green'; });
+    ui.addRedBuoy.addEventListener('click', () => { if (!isConstructionMode) activeBuoyColor = 'red'; });
     ui.clearBuoys.addEventListener('click', clearBuoys);
 }
 
 function clearBuoys() {
-  // Remove todas as bóias da cena e libera recursos de memória (geometria, material)
-  buoys.forEach(b => {
-    if (b.mesh) {
-      b.mesh.traverse?.((child) => {
-        if (child.isMesh) {
-          child.geometry?.dispose?.();
-          if (child.material) {
-            // Lida com materiais únicos ou múltiplos
-            if (Array.isArray(child.material)) {
-              child.material.forEach(m => m.dispose?.());
-            } else {
-              child.material.dispose?.();
-            }
-          }
+    // Remove todas as bóias da cena e libera recursos de memória (geometria, material)
+    buoys.forEach(b => {
+        if (b.mesh) {
+            b.mesh.traverse?.((child) => {
+                if (child.isMesh) {
+                    child.geometry?.dispose?.();
+                    if (child.material) {
+                        // Lida com materiais únicos ou múltiplos
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose?.());
+                        } else {
+                            child.material.dispose?.();
+                        }
+                    }
+                }
+            });
+            scene.remove(b.mesh);
         }
-      });
-      scene.remove(b.mesh);
-    }
-  });
-  buoys = []; // Esvazia o array de estado
+    });
+    buoys = []; // Esvazia o array de estado
 }
 
 function createBuoy(position, color) {
@@ -1116,10 +1120,10 @@ function createBuoy(position, color) {
     const coneGeo = new THREE.ConeGeometry(0.7, 1.2, 16);
     const cone = new THREE.Mesh(coneGeo, bodyMat);
     cone.position.y = 0.6;
-    
+
     const cylinderGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.4, 16);
     const cylinder = new THREE.Mesh(cylinderGeo, bodyMat);
-    
+
     buoyGroup.add(cone);
     buoyGroup.add(cylinder);
 
@@ -1130,20 +1134,20 @@ function createBuoy(position, color) {
     buoyGroup.add(anchorLine);
 
     scene.add(buoyGroup);
-    
+
     const buoy = {
         mesh: buoyGroup,
         anchor: position.clone(),
         position: position.clone(),
         velocity: new THREE.Vector3(),
-        collider: new THREE.Sphere(position.clone(), 0.2), 
+        collider: new THREE.Sphere(position.clone(), 0.2),
         bobOffset: Math.random() * Math.PI * 2
     };
     buoys.push(buoy);
 }
 
 function updateBuoys(dt) {
-    if(tugState.isPaused) return;
+    if (tugState.isPaused) return;
     const time = clock.getElapsedTime();
     buoys.forEach(buoy => {
         buoy.mesh.position.y = Math.sin(time * 2 + buoy.bobOffset) * 0.2;
@@ -1153,7 +1157,7 @@ function updateBuoys(dt) {
         const dampingForce = buoy.velocity.clone().multiplyScalar(-buoyPhysics.damping);
         const totalForce = new THREE.Vector3().addVectors(springForce, dampingForce);
         const acceleration = totalForce.divideScalar(buoyPhysics.mass);
-        
+
         buoy.velocity.add(acceleration.multiplyScalar(dt));
         buoy.position.add(buoy.velocity.clone().multiplyScalar(dt));
 
@@ -1167,25 +1171,25 @@ function updateBuoys(dt) {
 
 
 function updatePhysics(dt) {
-    if(tugState.isPaused) return;
+    if (tugState.isPaused) return;
 
     let totalForce = new THREE.Vector3(0, 0, 0);
-        let totalTorque = 0;
-    
+    let totalTorque = 0;
+
     let totalShipForce = new THREE.Vector3(0, 0, 0);
     let totalShipTorque = 0;
     const cgOffset = new THREE.Vector3(parseFloat(ui.cgX.value), 0, parseFloat(ui.cgZ.value));
 
     const thrusters = [
-        { angle: asdControls.port.angle, thrust: asdControls.port.thrust, posX: -physics.thrusterOffset.x }, 
+        { angle: asdControls.port.angle, thrust: asdControls.port.thrust, posX: -physics.thrusterOffset.x },
         { angle: asdControls.starboard.angle, thrust: asdControls.starboard.thrust, posX: physics.thrusterOffset.x }
     ];
-    
+
     thrusters.forEach(thruster => {
         const power = (thruster.thrust / 100) * physics.maxThrust;
         const angleRad = THREE.MathUtils.degToRad(thruster.angle);
         const localForce = new THREE.Vector3(Math.sin(angleRad), 0, Math.cos(angleRad)).multiplyScalar(power);
-        
+
         const globalForce = localForce.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), tugState.yaw);
         totalForce.add(globalForce);
 
@@ -1199,7 +1203,7 @@ function updatePhysics(dt) {
     const windMagnitude = windSpeed * windSpeed * physics.windCoefficient;
     const lateralWindForce = windMagnitude * Math.sin(relativeWindAngle);
     const longitudinalWindForce = windMagnitude * Math.cos(relativeWindAngle);
-    const windForceVector = new THREE.Vector3(lateralWindForce, 0, longitudinalWindForce).applyAxisAngle(new THREE.Vector3(0,1,0), tugState.yaw);
+    const windForceVector = new THREE.Vector3(lateralWindForce, 0, longitudinalWindForce).applyAxisAngle(new THREE.Vector3(0, 1, 0), tugState.yaw);
     totalForce.add(windForceVector);
     totalTorque += lateralWindForce * physics.windLeverArm;
 
@@ -1207,7 +1211,7 @@ function updatePhysics(dt) {
     const windMagnitudeShip = windSpeed * windSpeed * shipPhysics.windCoefficient;
     const lateralWindForceShip = windMagnitudeShip * Math.sin(relativeWindAngleShip);
     const longitudinalWindForceShip = windMagnitudeShip * Math.cos(relativeWindAngleShip);
-    const windForceVectorShip = new THREE.Vector3(lateralWindForceShip, 0, longitudinalWindForceShip).applyAxisAngle(new THREE.Vector3(0,1,0), shipState.yaw);
+    const windForceVectorShip = new THREE.Vector3(lateralWindForceShip, 0, longitudinalWindForceShip).applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
     totalShipForce.add(windForceVectorShip);
     totalShipTorque += lateralWindForceShip * shipPhysics.windLeverArm;
 
@@ -1217,7 +1221,7 @@ function updatePhysics(dt) {
     const currentMagnitude = currentSpeed * physics.currentCoefficient;
     const lateralCurrentForce = currentMagnitude * Math.sin(relativeCurrentAngle);
     const longitudinalCurrentForce = currentMagnitude * Math.cos(relativeCurrentAngle);
-    const currentForceVector = new THREE.Vector3(lateralCurrentForce, 0, longitudinalCurrentForce).applyAxisAngle(new THREE.Vector3(0,1,0), tugState.yaw);
+    const currentForceVector = new THREE.Vector3(lateralCurrentForce, 0, longitudinalCurrentForce).applyAxisAngle(new THREE.Vector3(0, 1, 0), tugState.yaw);
     totalForce.add(currentForceVector);
     totalTorque += lateralCurrentForce * physics.currentLeverArm;
 
@@ -1225,7 +1229,7 @@ function updatePhysics(dt) {
     const currentMagnitudeShip = currentSpeed * shipPhysics.currentCoefficient;
     const lateralCurrentForceShip = currentMagnitudeShip * Math.sin(relativeCurrentAngleShip);
     const longitudinalCurrentForceShip = currentMagnitudeShip * Math.cos(relativeCurrentAngleShip);
-    const currentForceVectorShip = new THREE.Vector3(lateralCurrentForceShip, 0, longitudinalCurrentForceShip).applyAxisAngle(new THREE.Vector3(0,1,0), shipState.yaw);
+    const currentForceVectorShip = new THREE.Vector3(lateralCurrentForceShip, 0, longitudinalCurrentForceShip).applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
     totalShipForce.add(currentForceVectorShip);
     totalShipTorque += lateralCurrentForceShip * shipPhysics.currentLeverArm;
 
@@ -1256,7 +1260,7 @@ function updatePhysics(dt) {
             if (stretch > 0) {
                 const forceDirection = lineVector.clone().normalize();
                 const springForceMagnitude = stretch * physics.lineStiffness;
-                
+
                 const relativeVelocity = tugState.velocity.clone();
                 const closingSpeed = relativeVelocity.dot(forceDirection);
                 const dampingForceMagnitude = closingSpeed * physics.lineDamping;
@@ -1265,7 +1269,7 @@ function updatePhysics(dt) {
                 if (totalLineForce < 0) totalLineForce = 0;
 
                 const tensionTons = totalLineForce / 9807;
-                debugData.lineTension = totalLineForce; 
+                debugData.lineTension = totalLineForce;
                 const tensionPercent = Math.min((totalLineForce / physics.lineBreakingLoad) * 100, 100);
                 tensionVal.textContent = tensionTons.toFixed(1);
                 tensionBar.style.width = `${tensionPercent}%`;
@@ -1280,19 +1284,19 @@ function updatePhysics(dt) {
 
                 const lineForceVector = forceDirection.clone().multiplyScalar(totalLineForce);
                 totalForce.add(lineForceVector);
-                
+
                 // Identify if bollard is on ship
                 if (state.targetBollardEl && state.targetBollardEl.isShipBollard) {
                     const lineForceVectorShip = forceDirection.clone().negate().multiplyScalar(totalLineForce);
                     totalShipForce.add(lineForceVectorShip);
-                    
+
                     const rShip = new THREE.Vector3().subVectors(state.bollard, shipState.position);
                     totalShipTorque += rShip.z * lineForceVectorShip.x - rShip.x * lineForceVectorShip.z;
                 }
 
                 const r = new THREE.Vector3().subVectors(mooringPointWorld, tugState.position);
                 totalTorque += r.z * lineForceVector.x - r.x * lineForceVector.z;
-            
+
             } else {
                 tensionVal.textContent = '0.0';
                 tensionBar.style.width = '0%';
@@ -1303,10 +1307,10 @@ function updatePhysics(dt) {
 
     const linearAcceleration = totalForce.clone().divideScalar(physics.mass);
     tugState.velocity.add(linearAcceleration.multiplyScalar(dt));
-    
+
     const angularAcceleration = totalTorque / physics.momentOfInertia;
     tugState.yawRate += angularAcceleration * dt;
-    
+
     tugState.velocity.multiplyScalar(1.0 - (1.0 - physics.linearDamping) * dt * 60);
     tugState.yawRate *= (1.0 - (1.0 - physics.angularDamping) * dt * 60);
 
@@ -1314,7 +1318,7 @@ function updatePhysics(dt) {
     tugState.yaw += tugState.yawRate * dt;
 
     // --- Ship Integration ---
-    
+
     // ==========================================
     // SISTEMA UNIFICADO DE VETORES DIRECIONAIS 
     // (Garante Simetria Perfeita entre Boreste-BE(+) e Bombordo-BB(-))
@@ -1322,53 +1326,53 @@ function updatePhysics(dt) {
     const localForward = shipPhysics.isZAxisLonger ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
     const shipForwardDir = localForward.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
     // +PI/2 garante que o vetor "Direito" aponte para Estibordo (Starboard/BE) indepente da escala
-    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2); 
+    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
 
     // === FORÇA E TORQUE MILIMETRADO ===
-    
+
     // 1. Motor Hélice Principal
-    const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); 
+    const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000);
     totalShipForce.add(engineForce);
-    
+
     // 2. Bow Thruster (Força na proa empurra a frente direto pro lado e gera Torque Direto)
     const bowThrustAmt = (shipControls.bowThruster / 100.0); // + (BE) ou - (BB)
-    const bowThrusterForce = shipRightDir.clone().multiplyScalar(bowThrustAmt * 50000); 
+    const bowThrusterForce = shipRightDir.clone().multiplyScalar(bowThrustAmt * 50000);
     totalShipForce.add(bowThrusterForce);
     // Força à BORESTE na Proa cria Torque pra BORESTE (+)
-    totalShipTorque += bowThrustAmt * 50000 * 60; 
-    
+    totalShipTorque += bowThrustAmt * 50000 * 60;
+
     // 3. Sistema Dinâmico do Leme (Giro gera Deriva)
     const forwardSpeed = Math.abs(shipState.velocity.dot(shipForwardDir));
     const propWash = Math.max(0, (shipControls.engine / 100.0) * 1.5);
     const effectiveWaterFlow = forwardSpeed + propWash;
-    
+
     // Leme de slider é -35 a 35. (+) = Boreste, (-) = Bombordo.
     const rudderAngleRad = THREE.MathUtils.degToRad(shipControls.rudder);
-    
+
     // Torque do Leme: Leme à Direita (+) curva o navio pra Direita (+)
     const rudderTorque = rudderAngleRad * effectiveWaterFlow * 400000;
     totalShipTorque += rudderTorque;
-    
+
     // Força Lateral da Popa: Para virar à direita (+), a água empurra a popa para a Esquerda / Bombordo (-shipRightDir)
     // Portanto derivamos a força invertendo o sinal algébrico!
     const rudderLateralForce = shipRightDir.clone().multiplyScalar(- (rudderTorque / 60.0));
     totalShipForce.add(rudderLateralForce);
-    
+
     debugData.shipForce = totalShipForce.length();
     debugData.shipTorque = totalShipTorque;
     debugData.tugForce = totalForce.length();
-    
+
     const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
     shipState.velocity.add(shipLinAcc.multiplyScalar(dt));
-    
+
     // === O MILAGRE DA DERIVA (Drag Lateral Anti-Puck) ====
     let velFwd = shipState.velocity.dot(shipForwardDir);
     let velLat = shipState.velocity.dot(shipRightDir);
-    
+
     // O navio é cortante linearmente, mas uma "Placa de Aço" lateralmente.
     velFwd *= (1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
     velLat *= (1.0 - (1.0 - 0.90) * dt * 60); // O mar estrangula 90% da escorregada lateral
-    
+
     shipState.velocity.copy(shipForwardDir.clone().multiplyScalar(velFwd).add(shipRightDir.clone().multiplyScalar(velLat)));
 
     const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
@@ -1387,26 +1391,26 @@ function checkCollisions() {
     tugCollider.updateWorldMatrix(true, false);
     const worldColliderBox = new THREE.Box3().setFromObject(tugCollider);
     tugState.boundingBox.copy(worldColliderBox);
-    
+
 
     if (shipColliderMesh && shipGroup) {
         shipColliderMesh.updateWorldMatrix(true, false);
         const shipBox = new THREE.Box3().setFromObject(shipColliderMesh);
         shipState.boundingBox.copy(shipBox);
-        
+
         if (tugState.boundingBox.intersectsBox(shipBox)) {
-             const overlap = new THREE.Vector3();
-             const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
-             const shipCenter = shipBox.getCenter(new THREE.Vector3());
-             overlap.subVectors(tugCenter, shipCenter);
+            const overlap = new THREE.Vector3();
+            const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
+            const shipCenter = shipBox.getCenter(new THREE.Vector3());
+            overlap.subVectors(tugCenter, shipCenter);
 
-             const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
-             const shipSize = shipBox.getSize(new THREE.Vector3());
+            const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
+            const shipSize = shipBox.getSize(new THREE.Vector3());
 
-             const overlapX = (tugSize.x / 2) + (shipSize.x / 2) - Math.abs(overlap.x);
-             const overlapZ = (tugSize.z / 2) + (shipSize.z / 2) - Math.abs(overlap.z);
+            const overlapX = (tugSize.x / 2) + (shipSize.x / 2) - Math.abs(overlap.x);
+            const overlapZ = (tugSize.z / 2) + (shipSize.z / 2) - Math.abs(overlap.z);
 
-             if(overlapX > 0 && overlapZ > 0){
+            if (overlapX > 0 && overlapZ > 0) {
                 if (overlapX < overlapZ) {
                     tugState.position.x += overlapX * Math.sign(overlap.x);
                     tugState.velocity.x *= -0.5;
@@ -1414,7 +1418,7 @@ function checkCollisions() {
                     tugState.position.z += overlapZ * Math.sign(overlap.z);
                     tugState.velocity.z *= -0.5;
                 }
-             }
+            }
         }
     }
 
@@ -1424,18 +1428,18 @@ function checkCollisions() {
         const pierBox = pierEl.mesh.geometry.boundingBox.clone();
         pierBox.applyMatrix4(pierEl.mesh.matrixWorld);
         if (tugState.boundingBox.intersectsBox(pierBox)) {
-             const overlap = new THREE.Vector3();
-             const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
-             const pierCenter = pierBox.getCenter(new THREE.Vector3());
-             overlap.subVectors(tugCenter, pierCenter);
+            const overlap = new THREE.Vector3();
+            const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
+            const pierCenter = pierBox.getCenter(new THREE.Vector3());
+            overlap.subVectors(tugCenter, pierCenter);
 
-             const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
-             const pierSize = pierBox.getSize(new THREE.Vector3());
+            const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
+            const pierSize = pierBox.getSize(new THREE.Vector3());
 
-             const overlapX = (tugSize.x / 2) + (pierSize.x / 2) - Math.abs(overlap.x);
-             const overlapZ = (tugSize.z / 2) + (pierSize.z / 2) - Math.abs(overlap.z);
+            const overlapX = (tugSize.x / 2) + (pierSize.x / 2) - Math.abs(overlap.x);
+            const overlapZ = (tugSize.z / 2) + (pierSize.z / 2) - Math.abs(overlap.z);
 
-             if(overlapX > 0 && overlapZ > 0){
+            if (overlapX > 0 && overlapZ > 0) {
                 if (overlapX < overlapZ) {
                     tugState.position.x += overlapX * Math.sign(overlap.x);
                     tugState.velocity.x *= -0.5;
@@ -1443,7 +1447,7 @@ function checkCollisions() {
                     tugState.position.z += overlapZ * Math.sign(overlap.z);
                     tugState.velocity.z *= -0.5;
                 }
-             }
+            }
         }
     });
 
@@ -1451,9 +1455,9 @@ function checkCollisions() {
         if (tugState.boundingBox.intersectsSphere(buoy.collider)) {
             const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
             const buoyCenter = buoy.collider.center;
-            
+
             const normal = new THREE.Vector3().subVectors(tugCenter, buoyCenter).normalize();
-            
+
             const pushForceToTug = normal.clone().multiplyScalar(0.1);
             tugState.velocity.add(pushForceToTug);
 
@@ -1470,10 +1474,10 @@ function updateCamera(dt) {
     }
 
     const view = cameraViews[currentView];
-    
+
     const desiredPos = view.pos.clone().applyMatrix4(cgPivot.matrixWorld);
     const desiredTarget = view.target.clone().applyMatrix4(cgPivot.matrixWorld);
-    
+
     const lerpFactor = Math.min(dt * 5.0, 1.0);
     camera.position.lerp(desiredPos, lerpFactor);
     controls.target.lerp(desiredTarget, lerpFactor);
@@ -1490,7 +1494,7 @@ function updateScene() {
         shipGroup.rotation.y = shipState.yaw;
     }
 
-    const speedKnots = tugState.velocity.length() * 1.94384; 
+    const speedKnots = tugState.velocity.length() * 1.94384;
     const headingDeg = (THREE.MathUtils.radToDeg(tugState.yaw) % 360 + 360) % 360;
     const yawRateDps = THREE.MathUtils.radToDeg(tugState.yawRate);
     ui.statusSpeed.textContent = `${speedKnots.toFixed(2)} nós`;
@@ -1501,7 +1505,7 @@ function updateScene() {
     const shipSpeedKnots = shipState.velocity.length() * 1.94384;
     if (ui.topTugSpeed) ui.topTugSpeed.textContent = `${speedKnots.toFixed(1)} kn`;
     if (ui.topShipSpeed) ui.topShipSpeed.textContent = `${shipSpeedKnots.toFixed(1)} kn`;
-    
+
     // Wind and Current Top Bar Update
     if (ui.topWind) ui.topWind.textContent = `${environmentControls.wind.strength.toFixed(0)} kn (${environmentControls.wind.direction.toFixed(0)}°)`;
     if (ui.topCurrent) ui.topCurrent.textContent = `${environmentControls.current.strength.toFixed(1)} kn (${environmentControls.current.direction.toFixed(0)}°)`;
@@ -1524,19 +1528,19 @@ function updateScene() {
 }
 
 function updateMooringButtonsState() {
-     if (!cgPivot || isConstructionMode) return;
+    if (!cgPivot || isConstructionMode) return;
     const mooringBollards = portElements.filter(el => el.type === 'bollard');
 
     if (!mooringState.bow.isMoored) {
         let isNearBollard = false;
-        if(mooringBollards.length > 0){
+        if (mooringBollards.length > 0) {
             const mooringPointWorld = cgPivot.localToWorld(mooringState.bow.mooringPoint.clone());
-            for(const bollardEl of mooringBollards){
-                 const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
-                 if(mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD){
+            for (const bollardEl of mooringBollards) {
+                const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                if (mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD) {
                     isNearBollard = true;
                     break;
-                 }
+                }
             }
         }
         ui.moorBow.disabled = !isNearBollard;
@@ -1544,14 +1548,14 @@ function updateMooringButtonsState() {
 
     if (!mooringState.stern.isMoored) {
         let isNearBollard = false;
-        if(mooringBollards.length > 0){
+        if (mooringBollards.length > 0) {
             const mooringPointWorld = cgPivot.localToWorld(mooringState.stern.mooringPoint.clone());
-            for(const bollardEl of mooringBollards){
-                 const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
-                 if(mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD){
+            for (const bollardEl of mooringBollards) {
+                const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                if (mooringPointWorld.distanceTo(worldBollardPos) <= MOORING_DISTANCE_THRESHOLD) {
                     isNearBollard = true;
                     break;
-                 }
+                }
             }
         }
         ui.moorStern.disabled = !isNearBollard;
@@ -1573,7 +1577,7 @@ function setupConstructionControls() {
         constructionSettings.elevation = elevation;
         ui.valStructureElevation.textContent = elevation.toFixed(1);
     });
-    
+
     ui.structureRotation.addEventListener('input', (e) => {
         const rotation = parseFloat(e.target.value);
         constructionSettings.rotation = rotation;
@@ -1597,7 +1601,7 @@ function enterConstructionMode() {
     ui.toggleConstructionMode.textContent = 'Sair do Modo de Construção';
     ui.toggleConstructionMode.classList.remove('btn-warn');
     ui.toggleConstructionMode.classList.add('btn-danger');
-    ui.constructionOptions.style.display = 'grid'; 
+    ui.constructionOptions.style.display = 'grid';
     constructionGrid.visible = true;
     controls.enableRotate = false;
 }
@@ -1607,14 +1611,14 @@ function exitConstructionMode() {
     ui.toggleConstructionMode.textContent = 'Entrar no Modo de Construção';
     ui.toggleConstructionMode.classList.add('btn-warn');
     ui.toggleConstructionMode.classList.remove('btn-danger');
-    ui.constructionOptions.style.display = 'none'; 
+    ui.constructionOptions.style.display = 'none';
     constructionGrid.visible = false;
     controls.enableRotate = true;
     cancelPlacement();
 }
 
 function startPlacement(type) {
-    cancelPlacement(); 
+    cancelPlacement();
     placementMode = type;
 
     let geometry, material;
@@ -1683,7 +1687,7 @@ function clearPort() {
 
 function onPointerMove(event) {
     if (!isConstructionMode || !placementMode) return;
-    
+
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1693,10 +1697,10 @@ function onPointerMove(event) {
     if (raycaster.ray.intersectPlane(seaPlane, intersectPoint)) {
         ghostObject.position.x = Math.round(intersectPoint.x * 2) / 2;
         ghostObject.position.z = Math.round(intersectPoint.z * 2) / 2;
-        
+
         ghostObject.rotation.y = THREE.MathUtils.degToRad(constructionSettings.rotation);
 
-        if(placementMode === 'pier') {
+        if (placementMode === 'pier') {
             ghostObject.position.y = constructionSettings.elevation - 0.75;
         } else if (placementMode === 'bollard') {
             ghostObject.position.y = constructionSettings.elevation + 0.4;
@@ -1725,16 +1729,16 @@ function onPointerDown(event) {
 
 function animate() {
     requestAnimationFrame(animate);
-    const dt = Math.min(clock.getDelta(), 1 / 30); 
+    const dt = Math.min(clock.getDelta(), 1 / 30);
 
-    if(!tugState.isPaused) {
+    if (!tugState.isPaused) {
         updateBuoys(dt);
         checkCollisions();
         updatePhysics(dt);
         updateScene();
         updateMooringButtonsState();
     }
-    
+
     updateCamera(dt);
     renderer.render(scene, camera);
 }
