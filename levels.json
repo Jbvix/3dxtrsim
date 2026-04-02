@@ -1,0 +1,103 @@
+{
+  "nivel-1": {
+    "name": "Nível 1",
+    "description": "Manobra básica sem bóias",
+    "initialTugState": {
+      "position": {"x": 0, "y": 0, "z": 50},
+      "yaw": 180
+    },
+    "environment": {},
+    "portElements": [
+      {"type": "pier", "position": {"x": 0, "y": 1.0, "z": 0}, "rotation": 0},
+      {"type": "bollard", "position": {"x": 3.5, "y": 1.4, "z": -15}, "rotation": 0},
+      {"type": "bollard", "position": {"x": -3.5, "y": 1.4, "z": -15}, "rotation": 0}
+    ],
+    "buoys": []
+  },
+
+  "nivel-2": {
+    "name": "Nível 2",
+    "description": "Canal reto até o cais – encarnada a boreste (direita), verde a bombordo (esquerda)",
+    "initialTugState": {
+      "position": {"x": 0, "y": 0, "z": 150},
+      "yaw": 180
+    },
+    "environment": {},
+    "portElements": [
+      {"type": "pier", "position": {"x": 0, "y": 1.0, "z": 0}, "rotation": 0},
+      {"type": "bollard", "position": {"x": 3.5, "y": 1.4, "z": -15}, "rotation": 0}
+    ],
+    "buoys": [
+      {"color": "red",   "position": {"x": 12, "z": 130}},
+      {"color": "green", "position": {"x": -12, "z": 130}},
+      {"color": "red",   "position": {"x": 12, "z": 110}},
+      {"color": "green", "position": {"x": -12, "z": 110}},
+      {"color": "red",   "position": {"x": 12, "z": 90}},
+      {"color": "green", "position": {"x": -12, "z": 90}},
+      {"color": "red",   "position": {"x": 12, "z": 70}},
+      {"color": "green", "position": {"x": -12, "z": 70}},
+      {"color": "red",   "position": {"x": 12, "z": 50}},
+      {"color": "green", "position": {"x": -12, "z": 50}},
+      {"color": "red",   "position": {"x": 12, "z": 30}},
+      {"color": "green", "position": {"x": -12, "z": 30}}
+    ]
+  },
+
+  "nivel-3a": {
+    "name": "Nível 3A",
+    "description": "Canal curvo com vento – encarnada a boreste (direita), verde a bombordo (esquerda)",
+    "initialTugState": {
+      "position": {"x": 80, "y": 0, "z": 100},
+      "yaw": 225
+    },
+    "environment": {
+      "wind": {"strength": 15, "direction": 270},
+      "current": {"strength": 0, "direction": 0}
+    },
+    "portElements": [
+      {"type": "pier", "position": {"x": 0, "y": 1.0, "z": 0}, "rotation": 0},
+      {"type": "bollard", "position": {"x": -3.5, "y": 1.4, "z": -15}, "rotation": 0}
+    ],
+    "buoys": [
+      {"color": "red",   "position": {"x": 87, "z": 85}},
+      {"color": "green", "position": {"x": 57, "z": 85}},
+      {"color": "red",   "position": {"x": 75, "z": 65}},
+      {"color": "green", "position": {"x": 45, "z": 65}},
+      {"color": "red",   "position": {"x": 57, "z": 48}},
+      {"color": "green", "position": {"x": 27, "z": 48}},
+      {"color": "red",   "position": {"x": 35, "z": 35}},
+      {"color": "green", "position": {"x": 5, "z": 35}},
+      {"color": "red",   "position": {"x": 17, "z": 25}},
+      {"color": "green", "position": {"x": -13, "z": 25}}
+    ]
+  },
+
+  "nivel-3b": {
+    "name": "Nível 3B",
+    "description": "Canal curvo com corrente – encarnada a boreste (direita), verde a bombordo (esquerda)",
+    "initialTugState": {
+      "position": {"x": 80, "y": 0, "z": 100},
+      "yaw": 225
+    },
+    "environment": {
+      "wind": {"strength": 0, "direction": 0},
+      "current": {"strength": 1.5, "direction": 90}
+    },
+    "portElements": [
+      {"type": "pier", "position": {"x": 0, "y": 1.0, "z": 0}, "rotation": 0},
+      {"type": "bollard", "position": {"x": -3.5, "y": 1.4, "z": -15}, "rotation": 0}
+    ],
+    "buoys": [
+      {"color": "red",   "position": {"x": 87, "z": 85}},
+      {"color": "green", "position": {"x": 57, "z": 85}},
+      {"color": "red",   "position": {"x": 75, "z": 65}},
+      {"color": "green", "position": {"x": 45, "z": 65}},
+      {"color": "red",   "position": {"x": 57, "z": 48}},
+      {"color": "green", "position": {"x": 27, "z": 48}},
+      {"color": "red",   "position": {"x": 35, "z": 35}},
+      {"color": "green", "position": {"x": 5, "z": 35}},
+      {"color": "red",   "position": {"x": 17, "z": 25}},
+      {"color": "green", "position": {"x": -13, "z": 25}}
+    ]
+  }
+}

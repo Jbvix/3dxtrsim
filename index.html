@@ -1,0 +1,175 @@
+<!--
+  Título: index.html - Landing Page do ASD TUG SIM
+  Autor: Charlie Bravo
+  Data da última modificação: 01/04/2026 22:45
+  Versão: 3.3
+  Descrição: Apresentação inicial do projeto interagindo com funcionalidades de abas.
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação Dinâmica - Simulador ASD TUG SIM v3.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ====================== RESET & FONTS ====================== */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        /* ====================== LAYOUT GERAL ====================== */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0e1217;
+            color: #e9ecef;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        .content-panel {
+            display: none;
+        }
+        .content-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            background-color: #1a2a3a;
+            border: 1px solid #34495e;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+        }
+        
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <div class="main-content max-w-6xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">Simulador de Manobra de Rebocador ASD</h1>
+            <p class="text-lg text-gray-400 mt-2">v3.3 - Apresentação Dinâmica</p>
+        </header>
+
+        <div id="objetivo" class="mb-12">
+             <h2 class="text-2xl font-semibold mb-4 text-blue-400 border-l-4 border-blue-400 pl-4">Objetivo Estratégico do Simulador</h2>
+             <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-lg text-gray-300 leading-relaxed space-y-4">
+                <p>O <strong>ASD TUG SIM</strong> é mais do que um software; é um laboratório de hidrodinâmica digital, um campo de treinamento para a intuição marítima. Seu objetivo principal é fornecer um ambiente de alta fidelidade para capacitação de comandantes e tripulações de rebocadores do tipo <span class="font-semibold text-amber-400">Azimuth Stern Drive (ASD)</span>.</p>
+                <p>Aqui, as complexas leis da física se tornam o mar e o código se torna a correnteza, permitindo que o operador execute e aprimore manobras em um ambiente seguro e controlado. É a ponte entre a teoria náutica e a prática no passadiço, preparando o profissional para os desafios dinâmicos do mundo real.</p>
+             </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-xl shadow-2xl p-6 sm:p-8">
+            <nav class="flex justify-center border-b border-gray-700 mb-8">
+                <button data-target="paineis" class="tab-button active text-lg font-medium py-3 px-6 text-gray-400 hover:text-blue-400">O Passadiço Virtual (Painéis)</button>
+                <button data-target="treinamentos" class="tab-button text-lg font-medium py-3 px-6 text-gray-400 hover:text-blue-400">A Escola do Mar (Treinamentos)</button>
+            </nav>
+
+            <div id="tab-content">
+                <div id="paineis" class="content-panel active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">🕹️ Controles ASD</h3>
+                            <p class="text-gray-300">O coração da manobra. Oferece controle granular sobre o azimute (ângulo) e a potência de cada propulsor. Essencial para movimentos de precisão.</p>
+                        </div>
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">⚓ Atracação</h3>
+                            <p class="text-gray-300">A arte de passar e controlar os cabos. Permite engajar guinchos, ajustar comprimentos e, crucialmente, monitorar a tensão.</p>
+                        </div>
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">📊 Ajustes & Status</h3>
+                            <p class="text-gray-300">A casa de máquinas e o centro de navegação. Exibe dados vitais (velocidade, rumo) e permite ajustes finos no centro de gravidade (CG).</p>
+                        </div>
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">🏗️ Editor de Cenário</h3>
+                            <p class="text-gray-300">Seu estaleiro particular. Adicione estruturas como cais e cabeços de amarração para criar desafios de manobra personalizados.</p>
+                        </div>
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">💨 Condições Ambientais</h3>
+                            <p class="text-gray-300">Simule o principal adversário do marinheiro: a natureza. Adicione vento e correnteza para replicar desde uma brisa suave até condições de máxima perícia.</p>
+                        </div>
+                        <div class="card rounded-lg p-6">
+                            <h3 class="text-xl font-bold mb-2 text-cyan-400">📷 Vistas e Balizamento</h3>
+                            <p class="text-gray-300">Controle sua perspectiva com múltiplas câmeras e posicione bóias para criar canais ou demarcar áreas de interesse.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="treinamentos" class="content-panel">
+                    <div class="space-y-8">
+                        <div class="card rounded-lg p-6 flex items-start gap-6">
+                            <div class="text-4xl font-bold text-blue-500">1</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-lime-400">Nível 1: Atracação Básica</h3>
+                                <p class="text-gray-300 mt-1">O fundamento. O objetivo é atracar o rebocador a um cais em condições ideais – sem vento ou corrente.</p>
+                            </div>
+                        </div>
+                        <div class="card rounded-lg p-6 flex items-start gap-6">
+                            <div class="text-4xl font-bold text-blue-500">2</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-lime-400">Nível 2: Canal de Bóias</h3>
+                                <p class="text-gray-300 mt-1">Navegação de precisão. O desafio é guiar o rebocador por um canal demarcado por bóias com um vento leve.</p>
+                            </div>
+                        </div>
+                        <div class="card rounded-lg p-6 flex items-start gap-6">
+                             <div class="text-4xl font-bold text-blue-500">3A</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-amber-400">Nível 3A: Manobra com Vento</h3>
+                                <p class="text-gray-300 mt-1">Navegue por um percurso sinuoso e atraque com um vento de través significativo.</p>
+                            </div>
+                        </div>
+                        <div class="card rounded-lg p-6 flex items-start gap-6">
+                             <div class="text-4xl font-bold text-blue-500">3B</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-red-400">Nível 3B: Manobra com Corrente</h3>
+                                <p class="text-gray-300 mt-1">O mesmo percurso, mas agora enfrentando uma forte corrente contrária à atracação.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botão de Acesso ao Simulador -->
+                    <div class="mt-12 text-center">
+                        <a href="tugasdsim3DXTR.html" target="_blank" class="inline-flex items-center justify-center px-8 py-4 font-bold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-colors duration-300 shadow-lg transform hover:scale-105">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            Acessar o Passadiço Virtual
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-12 text-gray-500">
+                      <p>© 2025 Jossian Brito</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Lógica de navegação por abas
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const contentPanels = document.querySelectorAll('.content-panel');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    contentPanels.forEach(panel => panel.classList.remove('active'));
+                    button.classList.add('active');
+                    const targetPanelId = button.getAttribute('data-target');
+                    document.getElementById(targetPanelId).classList.add('active');
+                });
+            });
+
+        });
+    </script>
+
+</body>
+</html>
+
