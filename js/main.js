@@ -483,7 +483,8 @@ function loadCargoShip() {
         const center = bbox.getCenter(new THREE.Vector3());
         
         // Centraliza o navio em todos os eixos no origin do Group
-        ship.position.sub(center);
+        // REMOVIDO: ship.position.sub(center); // O BoundingBox sofria anomalias de malhas invisiveis puxando o Pivot (CG) 100 metros pra fora do casco!
+        // Agora usamos a origem (0,0,0) nativa do modelo 3D (normalmente midships na linha d'agua) para rotacionar perfeitamente.
         
                 shipGroup = new THREE.Group();
         shipGroup.add(ship);
