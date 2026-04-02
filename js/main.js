@@ -482,40 +482,36 @@ function loadCargoShip() {
     
     const onModelLoad = (ship) => {
         const bbox = new THREE.Box3().setFromObject(ship);
-        
-        // Identifica o Casco Principal (Maior Malha do Navio em Volume)
-        // Isso ignora completamente malhas menores como guindastes e antenas laterais
+        // Calcula um BoundingBox rigoroso apenas com Malhas Visíveis
+        // Ignora Câmeras nativas do GLTF, Luzes, Ossos (Bones) estendidos infinitos que corrompem o Bounding Box!
         const realBox = new THREE.Box3();
-        let maxVolume = 0;
-        let foundHull = false;
-        
+        let boxInitialized = false;
         ship.traverse((child) => {
             if (child.isMesh && child.visible) {
                 if (child.material && child.material.opacity === 0) return;
                 const childBox = new THREE.Box3().setFromObject(child);
-                const cSize = childBox.getSize(new THREE.Vector3());
-                const volume = cSize.x * cSize.y * cSize.z;
-                
-                // O casco será sempre a malha com o maior volume interno
-                if (volume > maxVolume) {
-                    maxVolume = volume;
+                if (!boxInitialized) {
                     realBox.copy(childBox);
-                    foundHull = true;
+                    boxInitialized = true;
+                } else {
+                    realBox.union(childBox);
                 }
             }
         });
-        if (!foundHull) realBox.copy(bbox);
+        if (!boxInitialized) realBox.setFromObject(ship);
 
         const center = realBox.getCenter(new THREE.Vector3());
         
         // Centraliza de verdade o CG físico e rebaixa no Y perfeitamente, usando as medidas completas e justas!
         ship.position.sub(center);
         
-                shipGroup = new THREE.Group();
+        shipGroup = new THREE.Group();
         shipGroup.add(ship);
         
+        // CRÍTICO: Usar realBox purificado para determinar o tamanho físico do colisor e da navegação vertical!
         const size = realBox.getSize(new THREE.Vector3());
-        // Elevação de 40% (ajustaremos via slider de calado, mas base é 0.4 de Y real do casco)
+        
+        // Elevação de 40% solicitada pelo usuário (Salva como BASE pra servir de referencia ancorada no Calado)
         shipState.baseY = size.y * 0.4;
         shipState.position.y = shipState.baseY;
         shipGroup.position.set(50, shipState.position.y, -30);
@@ -524,20 +520,12 @@ function loadCargoShip() {
         scene.add(shipGroup);
         
         // = Colisionador Físico = (Oculto)
-        // Usa `size` (já blindado contra lixo via `realBox`)
+        // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
         const isZAxisLongerCollider = size.z > size.x;
         const shipLength = isZAxisLongerCollider ? size.z * 0.95 : size.x * 0.95;
-        
-        // Blindagem Marítima Anti-Guindaste Fundido: 
-        // A boca (largura) de um navio nunca ultrapassa ~22% do seu comprimento longo.
-        // O Math.min garante que os guindastes sejam fatiados na matrix física!
-        let rawWidth = isZAxisLongerCollider ? size.x : size.z;
-        const shipWidth = Math.min(rawWidth, shipLength * 0.22) * 0.90; 
-        
+        const shipWidth = isZAxisLongerCollider ? size.x * 0.5 : size.z * 0.5; // Reduz a largura pra evitar colisao com guindastes invisiveis
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
-        
-        // DEIXANDO VISÍVEL TEMPORARIAMENTE PARA VALIDAÇÃO GEOMÉTRICA DO USUARIO
-        const colliderMat = new THREE.MeshBasicMaterial({ visible: true, wireframe: true, color: 0x00ff00 });
+        const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
         
         // Como o navio foi perfeitamente centralizado, o collider também fica no zero
