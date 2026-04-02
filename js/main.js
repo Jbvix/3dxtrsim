@@ -884,6 +884,7 @@ function toggleMooring(type) {
     if (state.isMoored) {
         state.isMoored = false;
         state.bollard = null;
+        state.targetBollardEl = null;
         state.line.visible = false;
         winchControl.style.display = 'none';
         button.textContent = `Atracar ${type === 'bow' ? 'Proa' : 'Popa'}`;
@@ -895,6 +896,7 @@ function toggleMooring(type) {
     } else {
         const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
         let closestBollard = null;
+        let closestBollardEl = null;
         let minDistance = Infinity;
 
         portElements.filter(el => el.type === 'bollard').forEach(bollardEl => {
@@ -903,12 +905,14 @@ function toggleMooring(type) {
             if (distance < minDistance) {
                 minDistance = distance;
                 closestBollard = worldBollardPos.clone();
+                closestBollardEl = bollardEl;
             }
         });
 
         if (closestBollard && minDistance <= MOORING_DISTANCE_THRESHOLD) {
             state.isMoored = true;
             state.bollard = closestBollard;
+            state.targetBollardEl = closestBollardEl;
             state.line.visible = true;
             state.restLength = minDistance;
             state.targetRestLength = minDistance;
@@ -938,6 +942,7 @@ function toggleShipMooring(tugEnd, shipEnd) {
     
     // Força a atracação imediata
     state.bollard = worldBollardPos.clone();
+    state.targetBollardEl = targetBollard;
     state.isMoored = true;
     state.restLength = distance;
     state.targetRestLength = distance;
@@ -1128,6 +1133,10 @@ function updatePhysics(dt) {
         const lineLengthVal = ui[type === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
 
         if (state.isMoored) {
+            if (state.targetBollardEl) {
+                state.bollard = state.targetBollardEl.mesh.getWorldPosition(new THREE.Vector3());
+            }
+
             const lengthDifference = state.targetRestLength - state.restLength;
             if (Math.abs(lengthDifference) > 0.01) {
                 const adjustment = Math.sign(lengthDifference) * WINCH_SPEED * dt;
@@ -1169,8 +1178,7 @@ function updatePhysics(dt) {
                 totalForce.add(lineForceVector);
                 
                 // Identify if bollard is on ship
-                const targetBollard = portElements.find(el => el.isShipBollard && el.mesh.getWorldPosition(new THREE.Vector3()).distanceTo(state.bollard) < 0.2);
-                if (targetBollard) {
+                if (state.targetBollardEl && state.targetBollardEl.isShipBollard) {
                     const lineForceVectorShip = forceDirection.clone().negate().multiplyScalar(totalLineForce);
                     totalShipForce.add(lineForceVectorShip);
                     
