@@ -810,9 +810,9 @@ function setupUIEvents() {
             shipPhysics.mass = 10000000 + (pct * 50000000);
             shipPhysics.momentOfInertia = 150000000 + (pct * 600000000);
             
-            // Afundar vizualmente o navio (ate 3 m de variação pura de Y pra baixo da agua)
+            // Afundar vizualmente o navio (aprofundado mais 30% do calado a pedido do comandante)
             if (shipState.baseY !== undefined) {
-                shipState.position.y = shipState.baseY + 1.5 - (pct * 3.0);
+                shipState.position.y = shipState.baseY + 0.2 - (pct * 4.5);
             }
         });
     }
