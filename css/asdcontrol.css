@@ -1,0 +1,132 @@
+/*
+  Título: asdcontrol.css
+  Autor: Charlie Bravo
+  Data da última modificação: 02/04/2026 09:25
+  Versão: 1.0
+  Descrição: Estilos para o painel de controle ASD 2D
+*/
+
+/* ====================== VARIÁVEIS GLOBAIS E RESET ====================== */
+        :root {
+            --bg-dark: #101822;
+            --bg-medium: #1a2a3a;
+            --bg-light: #2c3e50;
+            --border-color: #34495e;
+            --text-light: #e9ecef;
+            --text-medium: #c1d7ee;
+            --text-dark: #8a9eb2;
+            --accent-blue: #3498db;
+            --accent-cyan: #34e7e4;
+            --status-green: #2ecc71;
+            --status-yellow: #f1c40f;
+            --status-red: #e74c3c;
+        }
+        body {
+            margin: 0;
+            background-color: var(--bg-medium);
+            color: var(--text-light);
+            font-family: system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            background-color: var(--bg-dark);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            user-select: none;
+        }
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .control-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-wrapper h3 {
+            margin: 0; padding: 0; font-weight: 500;
+            color: var(--text-dark); text-transform: uppercase;
+        }
+        .control-canvas {
+            background-color: var(--bg-light);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5) inset;
+            width: 180px;
+            height: 180px;
+            transition: opacity 0.3s ease;
+        }
+        .control-canvas.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #functions-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px;
+            background-color: var(--bg-medium);
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: center;
+        }
+        .function-button {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-light);
+            color: var(--text-medium);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .function-button:hover:not(:disabled) { background-color: #3e5670; }
+        .function-button.active { background-color: var(--status-green); color: white; border-color: #55d98c; }
+        .function-button.standby { background-color: var(--status-yellow); color: var(--bg-dark); border-color: #f39c12; }
+        .function-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .function-button svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        #telemetry-panel {
+            width: 100%;
+            font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, 'Courier New', monospace;
+            display: flex;
+            gap: 15px;
+        }
+        .prop-section {
+            flex: 1;
+            background-color: var(--bg-medium);
+            padding: 15px;
+            border-radius: 8px;
+        }
+         .prop-section h4 {
+            margin: 0 0 12px 0; font-weight: normal; color: var(--text-medium);
+            border-bottom: 1px solid var(--bg-light); padding-bottom: 8px; text-align: center;
+        }
+        .indicator-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .gauge-canvas { width: 100px; height: 60px; }
+        .angle-canvas { width: 60px; height: 60px; }
+        .indicator-readout { flex-grow: 1; text-align: center; }
+        .indicator-readout .value { font-size: 1.8em; font-weight: bold; }
+        .indicator-readout .unit { font-size: 0.9em; color: var(--text-dark); }

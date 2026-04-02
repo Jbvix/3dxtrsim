@@ -1,8 +1,8 @@
 <!--
   Título: index.html - Landing Page do ASD TUG SIM
   Autor: Charlie Bravo
-  Data da última modificação: 01/04/2026 22:45
-  Versão: 3.3
+  Data da última modificação: 02/04/2026 09:25
+  Versão: 3.4
   Descrição: Apresentação inicial do projeto interagindo com funcionalidades de abas.
 -->
 <!DOCTYPE html>
@@ -10,48 +10,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apresentação Dinâmica - Simulador ASD TUG SIM v3.3</title>
+    <title>Apresentação Dinâmica - Simulador ASD TUG SIM v3.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* ====================== RESET & FONTS ====================== */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-        
-        /* ====================== LAYOUT GERAL ====================== */
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #0e1217;
-            color: #e9ecef;
-        }
-        .tab-button {
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
-        }
-        .tab-button.active {
-            color: #3498db;
-            border-bottom-color: #3498db;
-        }
-        .content-panel {
-            display: none;
-        }
-        .content-panel.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .card {
-            background-color: #1a2a3a;
-            border: 1px solid #34495e;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
-        }
-        
-    </style>
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
@@ -152,23 +113,7 @@
         </footer>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Lógica de navegação por abas
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const contentPanels = document.querySelectorAll('.content-panel');
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    contentPanels.forEach(panel => panel.classList.remove('active'));
-                    button.classList.add('active');
-                    const targetPanelId = button.getAttribute('data-target');
-                    document.getElementById(targetPanelId).classList.add('active');
-                });
-            });
-
-        });
-    </script>
+    <script src="js/index.js"></script>
 
 </body>
 </html>
