@@ -62,9 +62,9 @@ const shipState = {
 };
 
 const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
-const shipControls = { engine: 0, rudder: 0, bowThruster: 0 };
+const shipControls = { engine: 0, rudder: 0, bowThruster: 0, draft: 5.0 };
 const shipPhysics = {
-    mass: 5000000, 
+    mass: 10000000, 
     momentOfInertia: 150000000, 
     linearDamping: 0.9997, 
     angularDamping: 0.998,
@@ -131,6 +131,8 @@ const ui = {
     btnCenterRudder: document.getElementById('btnCenterRudder'),
     shipBowThruster: document.getElementById('shipBowThruster'),
     valShipBowThruster: document.getElementById('valShipBowThruster'),
+    shipDraft: document.getElementById('shipDraft'),
+    valShipDraft: document.getElementById('valShipDraft'),
     btnCenterThruster: document.getElementById('btnCenterThruster'),
     topShipSpeed: document.getElementById('topShipSpeed'),
     topWind: document.getElementById('topWind'),
@@ -506,8 +508,9 @@ function loadCargoShip() {
         
         const size = bbox.getSize(new THREE.Vector3());
         
-        // Elevação de 40% solicitada pelo usuário para revelar o casco
-        shipState.position.y = size.y * 0.4;
+        // Elevação de 40% solicitada pelo usuário (Salva como BASE pra servir de referencia ancorada no Calado)
+        shipState.baseY = size.y * 0.4;
+        shipState.position.y = shipState.baseY;
         shipGroup.position.set(50, shipState.position.y, -30);
         shipGroup.rotation.y = -Math.PI / 6; // Ângulo para facilitar as abordagens
         
@@ -531,19 +534,22 @@ function loadCargoShip() {
         // == Ancoradouros / Cabeços do Navio ==
         const isZAxisLonger = size.z > size.x;
         shipPhysics.isZAxisLonger = isZAxisLonger;
-        // Pela screenshot e solicitação, descemos o local do convés ainda mais em relação ao centro da malha (submerso parcialmente).
-        const deckY = -(size.y * 0.18); 
+        
+        // Pega tamanho absoluto só do casco em vez do bounding box com mastros e guindastes orbitando
+        const realSize = realBox.getSize(new THREE.Vector3());
+
+        const deckY = -(realSize.y * 0.18); 
 
         // Criando visual em amarelo chamativo só para distinguir se precisarmos
         const bowBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0xe67e22}));
         const sternBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
         
         if (isZAxisLonger) {
-            bowBollard.position.set(0, deckY, size.z / 2 * 0.9);
-            sternBollard.position.set(0, deckY, -size.z / 2 * 0.9);
+            bowBollard.position.set(0, deckY, realSize.z / 2 * 0.98); // Encaixa direto na lataria firme da ponta do casco
+            sternBollard.position.set(0, deckY, -realSize.z / 2 * 0.95);
         } else {
-            bowBollard.position.set(size.x / 2 * 0.9, deckY, 0);
-            sternBollard.position.set(-size.x / 2 * 0.9, deckY, 0);
+            bowBollard.position.set(realSize.x / 2 * 0.98, deckY, 0);
+            sternBollard.position.set(-realSize.x / 2 * 0.95, deckY, 0);
         }
 
         shipGroup.add(bowBollard);
@@ -791,6 +797,21 @@ function setupUIEvents() {
             shipControls.bowThruster = 0;
             ui.shipBowThruster.value = 0;
             ui.valShipBowThruster.textContent = '0';
+        });
+        ui.shipDraft.addEventListener('input', (e) => {
+            const draftVal = parseFloat(e.target.value);
+            shipControls.draft = draftVal;
+            ui.valShipDraft.textContent = draftVal.toFixed(1);
+            
+            // Mapear calado de 5m (10k ton) a 15m (60k ton)
+            const pct = (draftVal - 5.0) / 10.0;
+            shipPhysics.mass = 10000000 + (pct * 50000000);
+            shipPhysics.momentOfInertia = 150000000 + (pct * 600000000);
+            
+            // Afundar vizualmente o navio (ate 10 m de variação pura de Y pra baixo da agua)
+            if (shipState.baseY !== undefined) {
+                shipState.position.y = shipState.baseY - (pct * 10.0);
+            }
         });
     }
     ui.cgX.addEventListener('input', updateCG);
