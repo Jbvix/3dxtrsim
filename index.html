@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,45 +9,55 @@
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="bg-hero-pattern min-h-screen relative flex flex-col justify-center py-10 sm:py-20">
 
     <!-- Fundo abstrato luminoso -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[10%] left-[20%] w-96 h-96 bg-cyan-600 rounded-full mix-blend-screen filter blur-[120px] opacity-20 float-anim"></div>
-        <div class="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] bg-blue-700 rounded-full mix-blend-screen filter blur-[150px] opacity-20" style="animation: float 8s ease-in-out infinite reverse;"></div>
+        <div
+            class="absolute top-[10%] left-[20%] w-96 h-96 bg-cyan-600 rounded-full mix-blend-screen filter blur-[120px] opacity-20 float-anim">
+        </div>
+        <div class="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] bg-blue-700 rounded-full mix-blend-screen filter blur-[150px] opacity-20"
+            style="animation: float 8s ease-in-out infinite reverse;"></div>
     </div>
 
     <div class="main-content max-w-6xl mx-auto px-4 z-10 relative">
         <header class="text-center mb-16">
-            <div class="inline-block px-4 py-1.5 rounded-full glass-panel text-cyan-400 text-sm font-semibold tracking-wider mb-4 border border-cyan-500/30">
+            <div
+                class="inline-block px-4 py-1.5 rounded-full glass-panel text-cyan-400 text-sm font-semibold tracking-wider mb-4 border border-cyan-500/30">
                 PROJETO LABSIM V3.4
             </div>
             <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white mb-6 tracking-tight">
                 ASD TUG <span class="text-gradient">SIMULATOR</span>
             </h1>
             <p class="text-xl sm:text-2xl text-slate-400 max-w-3xl mx-auto font-light leading-relaxed">
-                Laboratório Hidrodinâmico Digital. Treinamento de alta fidelidade para comandantes de rebocadores Azimuth Stern Drive.
+                Laboratório Hidrodinâmico Digital de rebocadores Azimuth Stern Drive.
             </p>
         </header>
 
         <div class="glass-panel rounded-2xl p-8 sm:p-10 mb-12 border-t border-white/10 shadow-2xl">
-             <div class="flex items-center gap-4 mb-6">
-                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.5)]">
-                     <i class="fa-solid fa-ship text-white text-xl"></i>
-                 </div>
-                 <h2 class="text-3xl font-bold text-white">Objetivo Estratégico</h2>
-             </div>
-             <p class="text-lg text-slate-300 leading-relaxed">
-                O <strong>ASD TUG SIM</strong> converte complexas leis da física num mar digital. Permite que o operador execute e aprimore manobras em um ambiente seguro, validando vetores de atracação, arrasto logístico e limites de tensão dos cabos. A ponte entre a teoria náutica e a prática viva no passadiço.
-             </p>
+            <div class="flex items-center gap-4 mb-6">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                    <i class="fa-solid fa-ship text-white text-xl"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-white">Objetivo Estratégico</h2>
+            </div>
+            <p class="text-lg text-slate-300 leading-relaxed">
+                O <strong>ASD TUG SIM</strong> converte complexas leis da física num mar digital. Permite que o operador
+                execute e aprimore manobras em um ambiente seguro, validando vetores de atracação, arrasto logístico e
+                limites de tensão dos cabos. A ponte entre a teoria náutica e a prática viva no passadiço.
+            </p>
         </div>
 
         <div class="glass-panel rounded-3xl p-6 sm:p-10">
             <nav class="flex justify-center flex-wrap gap-8 border-b border-slate-700/50 pb-4 mb-10">
-                <button data-target="paineis" class="tab-button active text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
+                <button data-target="paineis"
+                    class="tab-button active text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
                     <i class="fa-solid fa-desktop mr-2"></i> Sistemas do Painel
                 </button>
-                <button data-target="treinamentos" class="tab-button text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
+                <button data-target="treinamentos"
+                    class="tab-button text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
                     <i class="fa-solid fa-graduation-cap mr-2"></i> Módulos de Escalada
                 </button>
             </nav>
@@ -55,74 +66,117 @@
                 <div id="paineis" class="content-panel active">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-cyan-900/50 flex items-center justify-center border border-cyan-500/30 mb-4 text-cyan-400 text-xl"><i class="fa-solid fa-gamepad"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-cyan-900/50 flex items-center justify-center border border-cyan-500/30 mb-4 text-cyan-400 text-xl">
+                                <i class="fa-solid fa-gamepad"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Controles ASD</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">O coração da manobra. Oferece controle granular sobre o azimute (ângulo) e a potência de cada propulsor.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">O coração da manobra. Oferece controle
+                                granular sobre o azimute (ângulo) e a potência de cada propulsor.</p>
                         </div>
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center border border-blue-500/30 mb-4 text-blue-400 text-xl"><i class="fa-solid fa-anchor"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center border border-blue-500/30 mb-4 text-blue-400 text-xl">
+                                <i class="fa-solid fa-anchor"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Atracação Numérica</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">A arte de engajar guinchos e monitorar em tempo real a tensão e o rácio de limites de ruptura dos cabos.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">A arte de engajar guinchos e monitorar em
+                                tempo real a tensão e o rácio de limites de ruptura dos cabos.</p>
                         </div>
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-indigo-900/50 flex items-center justify-center border border-indigo-500/30 mb-4 text-indigo-400 text-xl"><i class="fa-solid fa-chart-line"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-indigo-900/50 flex items-center justify-center border border-indigo-500/30 mb-4 text-indigo-400 text-xl">
+                                <i class="fa-solid fa-chart-line"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Moto-Física Nativa</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">Exibe telemetria bruta de inputs vetoriais: Inércia, Massa, Tensão, Torque e Força Centrífuga.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Exibe telemetria bruta de inputs
+                                vetoriais: Inércia, Massa, Tensão, Torque e Força Centrífuga.</p>
                         </div>
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30 mb-4 text-teal-400 text-xl"><i class="fa-solid fa-wind"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-teal-900/50 flex items-center justify-center border border-teal-500/30 mb-4 text-teal-400 text-xl">
+                                <i class="fa-solid fa-wind"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Pressão Ambiental</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">Simule a natureza. Adicione intensidade de arrasto aerodinâmico (Vento) e forças hidrodinâmicas (Correntes).</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Simule a natureza. Adicione intensidade de
+                                arrasto aerodinâmico (Vento) e forças hidrodinâmicas (Correntes).</p>
                         </div>
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center border border-purple-500/30 mb-4 text-purple-400 text-xl"><i class="fa-solid fa-layer-group"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center border border-purple-500/30 mb-4 text-purple-400 text-xl">
+                                <i class="fa-solid fa-layer-group"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Arquiteto de Cenários</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">Seu espaço. Construa estruturas topográficas marítimas (cais, cabeços) e posicione balizas luminosas logísticas.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Seu espaço. Construa estruturas
+                                topográficas marítimas (cais, cabeços) e posicione balizas luminosas logísticas.</p>
                         </div>
                         <div class="glass-card rounded-2xl p-6">
-                            <div class="w-12 h-12 rounded-full bg-sky-900/50 flex items-center justify-center border border-sky-500/30 mb-4 text-sky-400 text-xl"><i class="fa-solid fa-camera"></i></div>
+                            <div
+                                class="w-12 h-12 rounded-full bg-sky-900/50 flex items-center justify-center border border-sky-500/30 mb-4 text-sky-400 text-xl">
+                                <i class="fa-solid fa-camera"></i></div>
                             <h3 class="text-xl font-bold mb-3 text-white">Matrizes Visuais</h3>
-                            <p class="text-slate-400 text-sm leading-relaxed">Perspectivas engajadas de câmeras fixas nos bordos, ou órbita livre para inspecionar cascos e defesas.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Perspectivas engajadas de câmeras fixas
+                                nos bordos, ou órbita livre para inspecionar cascos e defesas.</p>
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="treinamentos" class="content-panel">
                     <div class="max-w-4xl mx-auto space-y-6">
-                        <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
-                            <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl font-bold group-hover:bg-cyan-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)]">01</div>
+                        <div
+                            class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl font-bold group-hover:bg-cyan-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                                01</div>
                             <div class="text-center sm:text-left">
-                                <h3 class="text-xl font-bold text-white mb-1"><span class="text-cyan-400 mr-2 uppercase tracking-wide text-xs border border-cyan-400/30 rounded px-2 py-0.5">Fundamento</span> Atracação Neutra</h3>
-                                <p class="text-slate-400">Objetivo primordial de atracar o rebocador num cabeço de cais numa tarde de águas nulas.</p>
+                                <h3 class="text-xl font-bold text-white mb-1"><span
+                                        class="text-cyan-400 mr-2 uppercase tracking-wide text-xs border border-cyan-400/30 rounded px-2 py-0.5">Fundamento</span>
+                                    Atracação Neutra</h3>
+                                <p class="text-slate-400">Objetivo primordial de atracar o rebocador num cabeço de cais
+                                    numa tarde de águas nulas.</p>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
-                            <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center text-2xl font-bold group-hover:bg-blue-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.15)]">02</div>
+                        <div
+                            class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center text-2xl font-bold group-hover:bg-blue-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                                02</div>
                             <div class="text-center sm:text-left">
-                                <h3 class="text-xl font-bold text-white mb-1"><span class="text-blue-400 mr-2 uppercase tracking-wide text-xs border border-blue-400/30 rounded px-2 py-0.5">Precisão</span> Canal Restrito</h3>
-                                <p class="text-slate-400">Guie a nau através de boias encarnadas e verdes sofrendo pequenos driftings esporádicos.</p>
+                                <h3 class="text-xl font-bold text-white mb-1"><span
+                                        class="text-blue-400 mr-2 uppercase tracking-wide text-xs border border-blue-400/30 rounded px-2 py-0.5">Precisão</span>
+                                    Canal Restrito</h3>
+                                <p class="text-slate-400">Guie a nau através de boias encarnadas e verdes sofrendo
+                                    pequenos driftings esporádicos.</p>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
-                            <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl font-bold group-hover:bg-amber-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(245,158,11,0.15)]">03</div>
+                        <div
+                            class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl font-bold group-hover:bg-amber-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                                03</div>
                             <div class="text-center sm:text-left">
-                                <h3 class="text-xl font-bold text-white mb-1"><span class="text-amber-400 mr-2 uppercase tracking-wide text-xs border border-amber-400/30 rounded px-2 py-0.5">Ressaca</span> Arrasto Ventoso</h3>
-                                <p class="text-slate-400">Segure com o joystick a arfagem e guinada em ventos críticos de 20kn perpendicular ao porto.</p>
+                                <h3 class="text-xl font-bold text-white mb-1"><span
+                                        class="text-amber-400 mr-2 uppercase tracking-wide text-xs border border-amber-400/30 rounded px-2 py-0.5">Ressaca</span>
+                                    Arrasto Ventoso</h3>
+                                <p class="text-slate-400">Segure com o joystick a arfagem e guinada em ventos críticos
+                                    de 20kn perpendicular ao porto.</p>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
-                            <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-2xl font-bold group-hover:bg-rose-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)]">04</div>
+                        <div
+                            class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-2xl font-bold group-hover:bg-rose-500 group-hover:text-white transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)]">
+                                04</div>
                             <div class="text-center sm:text-left">
-                                <h3 class="text-xl font-bold text-white mb-1"><span class="text-rose-400 mr-2 uppercase tracking-wide text-xs border border-rose-400/30 rounded px-2 py-0.5">Mestre ASD</span> Correnteza Profunda</h3>
-                                <p class="text-slate-400">Lide com arrasto inercial brutal tentando amarrar na popa do cargueiro de 5.000 Tons atracado.</p>
+                                <h3 class="text-xl font-bold text-white mb-1"><span
+                                        class="text-rose-400 mr-2 uppercase tracking-wide text-xs border border-rose-400/30 rounded px-2 py-0.5">Mestre
+                                        ASD</span> Correnteza Profunda</h3>
+                                <p class="text-slate-400">Lide com arrasto inercial brutal tentando amarrar na popa do
+                                    cargueiro de 5.000 Tons atracado.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="mt-14 pb-4 text-center relative z-20">
-                <a href="tugasdsim3DXTR.html" class="glow-button inline-flex items-center justify-center px-10 py-5 bg-slate-900 text-white font-bold text-lg rounded-xl border border-slate-700 hover:bg-slate-800 transition duration-300">
+                <a href="tugasdsim3DXTR.html"
+                    class="glow-button inline-flex items-center justify-center px-10 py-5 bg-slate-900 text-white font-bold text-lg rounded-xl border border-slate-700 hover:bg-slate-800 transition duration-300">
                     <i class="fa-solid fa-power-off mr-3 text-cyan-400"></i> INICIAR SIMULADOR 3D
                 </a>
             </div>
@@ -132,7 +186,8 @@
             <p>ASDTUGSIM Lab Engine © 2026 Jossian Brito. Modelagem & Programação 3D por Charlie.</p>
         </footer>
     </div>
-    
+
     <script src="js/index.js"></script>
 </body>
+
 </html>
