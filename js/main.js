@@ -51,6 +51,26 @@ const mooringState = {
 const MOORING_DISTANCE_THRESHOLD = 8;
 const WINCH_SPEED = 2.0; // m/s
 
+
+const shipState = {
+    position: new THREE.Vector3(50, 0, -30),
+    velocity: new THREE.Vector3(0, 0, 0),
+    yaw: -Math.PI / 6,
+    yawRate: 0,
+    boundingBox: new THREE.Box3()
+};
+
+const shipPhysics = {
+    mass: 5000000, 
+    momentOfInertia: 150000000, 
+    linearDamping: 0.995, 
+    angularDamping: 0.995,
+    windCoefficient: 8000,
+    currentCoefficient: 150000,
+    windLeverArm: 10,
+    currentLeverArm: 5,
+};
+
 const asdControls = {
     port:      { angle: 0, thrust: 0 },
     starboard: { angle: 0, thrust: 0 }
@@ -100,6 +120,10 @@ const constructionSettings = {
 
 // ===== UI Refs =====
 const ui = {
+    topTugSpeed: document.getElementById('topTugSpeed'),
+    topShipSpeed: document.getElementById('topShipSpeed'),
+    topWind: document.getElementById('topWind'),
+    topCurrent: document.getElementById('topCurrent'),
     statusSpeed: document.getElementById('statusSpeed'),
     statusHeading: document.getElementById('statusHeading'),
     statusYawRate: document.getElementById('statusYawRate'),
@@ -450,7 +474,7 @@ function loadCargoShip() {
         // Centraliza o navio em todos os eixos no origin do Group
         ship.position.sub(center);
         
-        const shipGroup = new THREE.Group();
+                shipGroup = new THREE.Group();
         shipGroup.add(ship);
         
         const size = bbox.getSize(new THREE.Vector3());
@@ -471,11 +495,7 @@ function loadCargoShip() {
         shipCollider.position.set(0, 0, 0);
         shipGroup.add(shipCollider);
         
-        portElements.push({
-            id: THREE.MathUtils.generateUUID(),
-            type: 'pier', // Atua com a mesma física de rebote brutal do pier/oceano
-            mesh: shipCollider
-        });
+        shipColliderMesh = shipCollider;
         
         // == Ancoradouros / Cabeços do Navio ==
         const isZAxisLonger = size.z > size.x;
@@ -1038,7 +1058,10 @@ function updatePhysics(dt) {
     if(tugState.isPaused) return;
 
     let totalForce = new THREE.Vector3(0, 0, 0);
-    let totalTorque = 0;
+        let totalTorque = 0;
+    
+    let totalShipForce = new THREE.Vector3(0, 0, 0);
+    let totalShipTorque = 0;
     const cgOffset = new THREE.Vector3(parseFloat(ui.cgX.value), 0, parseFloat(ui.cgZ.value));
 
     const thrusters = [
@@ -1068,6 +1091,14 @@ function updatePhysics(dt) {
     totalForce.add(windForceVector);
     totalTorque += lateralWindForce * physics.windLeverArm;
 
+    const relativeWindAngleShip = windAngleRad - shipState.yaw;
+    const windMagnitudeShip = windSpeed * windSpeed * shipPhysics.windCoefficient;
+    const lateralWindForceShip = windMagnitudeShip * Math.sin(relativeWindAngleShip);
+    const longitudinalWindForceShip = windMagnitudeShip * Math.cos(relativeWindAngleShip);
+    const windForceVectorShip = new THREE.Vector3(lateralWindForceShip, 0, longitudinalWindForceShip).applyAxisAngle(new THREE.Vector3(0,1,0), shipState.yaw);
+    totalShipForce.add(windForceVectorShip);
+    totalShipTorque += lateralWindForceShip * shipPhysics.windLeverArm;
+
     const currentAngleRad = THREE.MathUtils.degToRad(environmentControls.current.direction);
     const relativeCurrentAngle = currentAngleRad - tugState.yaw;
     const currentSpeed = environmentControls.current.strength * 0.5144;
@@ -1077,6 +1108,14 @@ function updatePhysics(dt) {
     const currentForceVector = new THREE.Vector3(lateralCurrentForce, 0, longitudinalCurrentForce).applyAxisAngle(new THREE.Vector3(0,1,0), tugState.yaw);
     totalForce.add(currentForceVector);
     totalTorque += lateralCurrentForce * physics.currentLeverArm;
+
+    const relativeCurrentAngleShip = currentAngleRad - shipState.yaw;
+    const currentMagnitudeShip = currentSpeed * shipPhysics.currentCoefficient;
+    const lateralCurrentForceShip = currentMagnitudeShip * Math.sin(relativeCurrentAngleShip);
+    const longitudinalCurrentForceShip = currentMagnitudeShip * Math.cos(relativeCurrentAngleShip);
+    const currentForceVectorShip = new THREE.Vector3(lateralCurrentForceShip, 0, longitudinalCurrentForceShip).applyAxisAngle(new THREE.Vector3(0,1,0), shipState.yaw);
+    totalShipForce.add(currentForceVectorShip);
+    totalShipTorque += lateralCurrentForceShip * shipPhysics.currentLeverArm;
 
 
     for (const type of ['bow', 'stern']) {
@@ -1124,6 +1163,16 @@ function updatePhysics(dt) {
 
                 const lineForceVector = forceDirection.clone().multiplyScalar(totalLineForce);
                 totalForce.add(lineForceVector);
+                
+                // Identify if bollard is on ship
+                const targetBollard = portElements.find(el => el.isShipBollard && el.mesh.getWorldPosition(new THREE.Vector3()).distanceTo(state.bollard) < 0.2);
+                if (targetBollard) {
+                    const lineForceVectorShip = forceDirection.clone().negate().multiplyScalar(totalLineForce);
+                    totalShipForce.add(lineForceVectorShip);
+                    
+                    const rShip = new THREE.Vector3().subVectors(state.bollard, shipState.position);
+                    totalShipTorque += rShip.z * lineForceVectorShip.x - rShip.x * lineForceVectorShip.z;
+                }
 
                 const r = new THREE.Vector3().subVectors(mooringPointWorld, tugState.position);
                 totalTorque += r.z * lineForceVector.x - r.x * lineForceVector.z;
@@ -1148,6 +1197,18 @@ function updatePhysics(dt) {
     tugState.position.add(tugState.velocity.clone().multiplyScalar(dt));
     tugState.yaw += tugState.yawRate * dt;
 
+    // --- Ship Integration ---
+    const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
+    shipState.velocity.add(shipLinAcc.multiplyScalar(dt));
+    shipState.velocity.multiplyScalar(1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
+
+    const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
+    shipState.yawRate += shipAngAcc * dt;
+    shipState.yawRate *= (1.0 - (1.0 - shipPhysics.angularDamping) * dt * 60);
+
+    shipState.position.add(shipState.velocity.clone().multiplyScalar(dt));
+    shipState.yaw += shipState.yawRate * dt;
+
     updateVisuals(totalForce);
 }
 
@@ -1158,6 +1219,36 @@ function checkCollisions() {
     const worldColliderBox = new THREE.Box3().setFromObject(tugCollider);
     tugState.boundingBox.copy(worldColliderBox);
     
+
+    if (shipColliderMesh && shipGroup) {
+        shipColliderMesh.updateWorldMatrix(true, false);
+        const shipBox = new THREE.Box3().setFromObject(shipColliderMesh);
+        shipState.boundingBox.copy(shipBox);
+        
+        if (tugState.boundingBox.intersectsBox(shipBox)) {
+             const overlap = new THREE.Vector3();
+             const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
+             const shipCenter = shipBox.getCenter(new THREE.Vector3());
+             overlap.subVectors(tugCenter, shipCenter);
+
+             const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
+             const shipSize = shipBox.getSize(new THREE.Vector3());
+
+             const overlapX = (tugSize.x / 2) + (shipSize.x / 2) - Math.abs(overlap.x);
+             const overlapZ = (tugSize.z / 2) + (shipSize.z / 2) - Math.abs(overlap.z);
+
+             if(overlapX > 0 && overlapZ > 0){
+                if (overlapX < overlapZ) {
+                    tugState.position.x += overlapX * Math.sign(overlap.x);
+                    tugState.velocity.x *= -0.5;
+                } else {
+                    tugState.position.z += overlapZ * Math.sign(overlap.z);
+                    tugState.velocity.z *= -0.5;
+                }
+             }
+        }
+    }
+
     portElements.filter(el => el.type === 'pier').forEach(pierEl => {
         pierEl.mesh.updateWorldMatrix(true, false);
         if (!pierEl.mesh.geometry.boundingBox) pierEl.mesh.geometry.computeBoundingBox();
@@ -1225,12 +1316,26 @@ function updateScene() {
     cgPivot.position.copy(newPos);
     cgPivot.rotation.y = tugState.yaw;
 
+    if (shipGroup) {
+        shipGroup.position.copy(shipState.position);
+        shipGroup.rotation.y = shipState.yaw;
+    }
+
     const speedKnots = tugState.velocity.length() * 1.94384; 
     const headingDeg = (THREE.MathUtils.radToDeg(tugState.yaw) % 360 + 360) % 360;
     const yawRateDps = THREE.MathUtils.radToDeg(tugState.yawRate);
     ui.statusSpeed.textContent = `${speedKnots.toFixed(2)} nós`;
     ui.statusHeading.textContent = `${headingDeg.toFixed(1)} °`;
     ui.statusYawRate.textContent = `${yawRateDps.toFixed(2)} °/s`;
+
+    // Update Top Telemetry UI
+    const shipSpeedKnots = shipState.velocity.length() * 1.94384;
+    if (ui.topTugSpeed) ui.topTugSpeed.textContent = `${speedKnots.toFixed(1)} kn`;
+    if (ui.topShipSpeed) ui.topShipSpeed.textContent = `${shipSpeedKnots.toFixed(1)} kn`;
+    
+    // Wind and Current Top Bar Update
+    if (ui.topWind) ui.topWind.textContent = `${environmentControls.wind.strength.toFixed(0)} kn (${environmentControls.wind.direction.toFixed(0)}°)`;
+    if (ui.topCurrent) ui.topCurrent.textContent = `${environmentControls.current.strength.toFixed(1)} kn (${environmentControls.current.direction.toFixed(0)}°)`;
 }
 
 function updateMooringButtonsState() {
