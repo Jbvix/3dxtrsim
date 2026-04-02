@@ -481,7 +481,8 @@ function loadCargoShip() {
         const size = bbox.getSize(new THREE.Vector3());
         
         // Elevação de 40% solicitada pelo usuário para revelar o casco
-        shipGroup.position.set(50, size.y * 0.4, -30);
+        shipState.position.y = size.y * 0.4;
+        shipGroup.position.set(50, shipState.position.y, -30);
         shipGroup.rotation.y = -Math.PI / 6; // Ângulo para facilitar as abordagens
         
         scene.add(shipGroup);
