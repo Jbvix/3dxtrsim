@@ -482,25 +482,27 @@ function loadCargoShip() {
     
     const onModelLoad = (ship) => {
         const bbox = new THREE.Box3().setFromObject(ship);
-        // Encontrar a malha principal (Casco) com mais vértices para ser a âncora real do bounding box
-        // Isso ignora malhas invisíveis ou rigging esticado que estava distorcendo o Centro de Massa!
-        let hullMesh = null;
-        let maxVerts = 0;
+        // Calcula um BoundingBox rigoroso apenas com Malhas Visíveis
+        // Ignora Câmeras nativas do GLTF, Luzes, Ossos (Bones) estendidos infinitos que corrompem o Bounding Box!
+        const realBox = new THREE.Box3();
+        let boxInitialized = false;
         ship.traverse((child) => {
-            if (child.isMesh && child.geometry && child.geometry.attributes.position) {
-                const count = child.geometry.attributes.position.count;
-                if (count > maxVerts) {
-                    maxVerts = count;
-                    hullMesh = child;
+            if (child.isMesh && child.visible) {
+                if (child.material && child.material.opacity === 0) return;
+                const childBox = new THREE.Box3().setFromObject(child);
+                if (!boxInitialized) {
+                    realBox.copy(childBox);
+                    boxInitialized = true;
+                } else {
+                    realBox.union(childBox);
                 }
             }
         });
-        
-        // Pega o centro baseado PURAMENTE no casco sólido do navio!
-        const realBox = new THREE.Box3().setFromObject(hullMesh ? hullMesh : ship);
+        if (!boxInitialized) realBox.setFromObject(ship);
+
         const center = realBox.getCenter(new THREE.Vector3());
         
-        // Baixa o navio de volta pra água e centra o CG perfeitamente no meio do chaparraiz
+        // Centraliza de verdade o CG físico e rebaixa no Y perfeitamente, usando as medidas completas e justas!
         ship.position.sub(center);
         
                 shipGroup = new THREE.Group();
@@ -538,7 +540,7 @@ function loadCargoShip() {
         // Pega tamanho absoluto só do casco em vez do bounding box com mastros e guindastes orbitando
         const realSize = realBox.getSize(new THREE.Vector3());
 
-        const deckY = -(realSize.y * 0.18); 
+        const deckY = -(realSize.y * 0.20); // Altura típica do convés principal baseada do centro (quase waterline) 
 
         // Criando visual em amarelo chamativo só para distinguir se precisarmos
         const bowBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0xe67e22}));
@@ -810,7 +812,7 @@ function setupUIEvents() {
             
             // Afundar vizualmente o navio (ate 10 m de variação pura de Y pra baixo da agua)
             if (shipState.baseY !== undefined) {
-                shipState.position.y = shipState.baseY - (pct * 10.0);
+                shipState.position.y = shipState.baseY - (pct * 8.0);
             }
         });
     }
