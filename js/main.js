@@ -526,8 +526,8 @@ function loadCargoShip() {
         // Muitos modelos GLB vêm com "Lixos Laterais" (Water planes, cranes de doca embutidos)
         // que corrompem a leitura geométrica da largura (Width).
         // Em Engenharia Naval, a 'Boca' (Beam) de um Cargueiro é historicamente ~1/6 do seu Comprimento.
-        // Vamos forçar o colisor a ter exatamente a proporção do aço:
-        const shipWidth = shipLength / 6.2;  
+        // Vamos forçar o colisor a ter exatamente a proporção do aço, afinando pra escala Panamax:
+        const shipWidth = shipLength / 6.6;  
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
