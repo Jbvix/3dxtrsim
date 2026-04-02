@@ -1344,7 +1344,7 @@ function updatePhysics(dt) {
     
     shipState.velocity.copy(shipForwardDir.clone().multiplyScalar(velFwd).add(shipRightDir.clone().multiplyScalar(velLat)));
 
-    // const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
+    const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
     shipState.yawRate += shipAngAcc * dt;
     shipState.yawRate *= (1.0 - (1.0 - shipPhysics.angularDamping) * dt * 60);
 
