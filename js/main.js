@@ -466,13 +466,17 @@ function loadModel() {
         const center = realBox.getCenter(new THREE.Vector3());
         modelObject.position.sub(center);
         
+        // A filtragem "anti-lixo" centralizou o rebocador perfeitamente no Y=0.
+        // Se a água está em Y=0, metade do rebocador estava afundando!
+        // Precisamos elevar ele da água baseado no tamanho real do casco (baseY).
+        const size = realBox.getSize(new THREE.Vector3());
+        modelObject.position.y += size.y * 0.25; // Sobe o rebocador para nivelar a Linha d'agua
+        
         hullGroup.add(modelObject);
         updateCG();
 
         const scale = modelObject.scale;
         ui.scaleParams.textContent = `${scale.x.toFixed(1)}, ${scale.y.toFixed(1)}, ${scale.z.toFixed(1)}`;
-        
-        const size = realBox.getSize(new THREE.Vector3());
         
         // Colisor do Rebocador perfeitamente envelopado na malha de metal pintado
         const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
