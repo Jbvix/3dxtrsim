@@ -1305,9 +1305,14 @@ function updatePhysics(dt) {
     // Torque from Rudder (rudder turn requires flow speed, either from ship moving or prop wash)
     const effectiveWaterFlow = Math.abs(shipState.velocity.length()) + Math.max(0, (shipControls.engine / 100.0) * 3.0);
     const rudderAngleRad = THREE.MathUtils.degToRad(-shipControls.rudder);
-    // Large lever arm in the back (e.g. 70m)
+    
+    // Large lever arm in the back (e.g. 60m)
     const rudderTorque = rudderAngleRad * effectiveWaterFlow * 25000000;
     totalShipTorque += rudderTorque;
+    
+    // NOVIDADE: Ação de Pivot Físico REAL based on Diagrama (Força lateral empurra a popa pra fora, causando Deriva)
+    const rudderLateralForce = shipRightDir.clone().multiplyScalar(rudderTorque / 60.0);
+    totalShipForce.add(rudderLateralForce);
     
     debugData.shipForce = totalShipForce.length();
 
