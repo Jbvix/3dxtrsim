@@ -446,8 +446,24 @@ function loadModel() {
     const loader = new GLTFLoader();
     const modelPath = './modelo_rebocador/tugboat.glb';
     const onModelLoad = (modelObject) => {
-        const bbox = new THREE.Box3().setFromObject(modelObject);
-        const center = bbox.getCenter(new THREE.Vector3());
+        // Filtra lixos do GLB (Luzes, câmeras, planos d'água transparentes invisíveis) que corrompiam o Rebocador
+        const realBox = new THREE.Box3();
+        let boxInitialized = false;
+        modelObject.traverse((child) => {
+            if (child.isMesh && child.visible) {
+                if (child.material && child.material.opacity === 0) return;
+                const childBox = new THREE.Box3().setFromObject(child);
+                if (!boxInitialized) {
+                    realBox.copy(childBox);
+                    boxInitialized = true;
+                } else {
+                    realBox.union(childBox);
+                }
+            }
+        });
+        if (!boxInitialized) realBox.setFromObject(modelObject);
+        
+        const center = realBox.getCenter(new THREE.Vector3());
         modelObject.position.sub(center);
         
         hullGroup.add(modelObject);
@@ -456,7 +472,9 @@ function loadModel() {
         const scale = modelObject.scale;
         ui.scaleParams.textContent = `${scale.x.toFixed(1)}, ${scale.y.toFixed(1)}, ${scale.z.toFixed(1)}`;
         
-        const size = bbox.getSize(new THREE.Vector3());
+        const size = realBox.getSize(new THREE.Vector3());
+        
+        // Colisor do Rebocador perfeitamente envelopado na malha de metal pintado
         const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false, wireframe: true });
         tugCollider = new THREE.Mesh(colliderGeo, colliderMat);
