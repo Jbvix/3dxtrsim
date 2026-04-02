@@ -523,7 +523,9 @@ function loadCargoShip() {
         // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
         const isZAxisLongerCollider = size.z > size.x;
         const shipLength = isZAxisLongerCollider ? size.z * 0.95 : size.x * 0.95;
-        const shipWidth = isZAxisLongerCollider ? size.x * 0.5 : size.z * 0.5; // Reduz a largura pra evitar colisao com guindastes invisiveis
+        // Agora que usamos o "realBox" filtrado, os guindastes não são mais problema. 
+        // Aumentamos a largura (Width) de volta quase ao limite do envelope do aço (0.95).
+        const shipWidth = isZAxisLongerCollider ? size.x * 0.95 : size.z * 0.95; 
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
