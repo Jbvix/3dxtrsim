@@ -508,9 +508,8 @@ function loadCargoShip() {
                 shipGroup = new THREE.Group();
         shipGroup.add(ship);
         
-        const size = bbox.getSize(new THREE.Vector3());
-        
-        // Elevação de 40% solicitada pelo usuário (Salva como BASE pra servir de referencia ancorada no Calado)
+        const size = realBox.getSize(new THREE.Vector3());
+        // Elevação de 40% (ajustaremos via slider de calado, mas base é 0.4 de Y real do casco)
         shipState.baseY = size.y * 0.4;
         shipState.position.y = shipState.baseY;
         shipGroup.position.set(50, shipState.position.y, -30);
@@ -519,10 +518,11 @@ function loadCargoShip() {
         scene.add(shipGroup);
         
         // = Colisionador Físico = (Oculto)
-        // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
+        // Usa `size` (já blindado contra lixo via `realBox`)
         const isZAxisLongerCollider = size.z > size.x;
         const shipLength = isZAxisLongerCollider ? size.z * 0.95 : size.x * 0.95;
-        const shipWidth = isZAxisLongerCollider ? size.x * 0.5 : size.z * 0.5; // Reduz a largura pra evitar colisao com guindastes invisiveis
+        // Ajuste: Aumentar largura para fechar o corpo de 0.5 para 0.9. (O Vazio já foi eliminado filtrando o lixo 3D do realBox)
+        const shipWidth = isZAxisLongerCollider ? size.x * 0.98 : size.z * 0.98; 
         const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
