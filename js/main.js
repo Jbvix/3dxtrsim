@@ -18,6 +18,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 let scene, camera, renderer, controls, clock;
 let hullGroup, cgPivot; 
 let tug, tugCollider; 
+let shipGroup, shipColliderMesh; 
 let waterlineY = 2.0; 
 let portThrusterArrow, starboardThrusterArrow, resultantForceArrow;
 let windArrow, currentArrow;
