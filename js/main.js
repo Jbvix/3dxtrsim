@@ -90,7 +90,7 @@ const physics = {
     maxThrust: 294210.0,
     linearDamping: 0.98,
     angularDamping: 0.98,
-    thrusterOffset: { x: 1.5, z: -5.0 },
+    thrusterOffset: { x: 1.2, z: -3.5 }, // Z ajustado para ficar mais ao centro da popa em vez do extremo traseiro
     lineStiffness: 20000.0,
     lineDamping: 0.85,
     lineBreakingLoad: 102 * 9807,
@@ -598,12 +598,10 @@ function loadCargoShip() {
 
 function createVisuals() {
     const arrowLength = 2.5;
-    const thrusterDepthY = -0.5; // Ficam submersos sob a linha d'água no visual
-    
-    // Bombordo (Port) é Vermelho (0xff0000) e fica à Esquerda (-X)
-    portThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-physics.thrusterOffset.x, thrusterDepthY, physics.thrusterOffset.z), arrowLength, 0xff0000, 0.5, 0.5);
-    // Boreste (Starboard) é Verde (0x00ff00) e fica à Direita (+X)
-    starboardThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(physics.thrusterOffset.x, thrusterDepthY, physics.thrusterOffset.z), arrowLength, 0x00ff00, 0.5, 0.5);
+
+    // Conforme instrução do comandante, as posições vetoriais laterais originais estavam corretas
+    portThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0xff0000, 0.5, 0.5);
+    starboardThrusterArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-physics.thrusterOffset.x, 0, physics.thrusterOffset.z), arrowLength, 0x00ff00, 0.5, 0.5);
 
     resultantForceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 0, 0x00ffff, 1.0, 0.8);
     cgPivot.add(resultantForceArrow);
