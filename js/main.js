@@ -547,10 +547,10 @@ function loadCargoShip() {
         const sternBollard = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
         
         if (isZAxisLonger) {
-            bowBollard.position.set(0, deckY, realSize.z / 2 * 0.98); // Encaixa direto na lataria firme da ponta do casco
+            bowBollard.position.set(0, deckY + 0.5, realSize.z / 2 * 0.85); // Recuado pra 0.85 (evita a quina V) e subido levemente pro Castelo
             sternBollard.position.set(0, deckY, -realSize.z / 2 * 0.95);
         } else {
-            bowBollard.position.set(realSize.x / 2 * 0.98, deckY, 0);
+            bowBollard.position.set(realSize.x / 2 * 0.85, deckY + 0.5, 0);
             sternBollard.position.set(-realSize.x / 2 * 0.95, deckY, 0);
         }
 
