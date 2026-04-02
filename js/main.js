@@ -20,6 +20,7 @@ let hullGroup, cgPivot;
 let tug, tugCollider;
 let shipGroup, shipColliderMesh;
 let waterlineY = 2.0;
+let tugVisualElevationY = 0;
 let portThrusterArrow, starboardThrusterArrow, resultantForceArrow;
 let windArrow, currentArrow;
 let bowLine, sternLine;
@@ -90,7 +91,7 @@ const physics = {
     maxThrust: 294210.0,
     linearDamping: 0.98,
     angularDamping: 0.98,
-    thrusterOffset: { x: 1.2, z: -3.5 }, // Z ajustado para ficar mais ao centro da popa em vez do extremo traseiro
+    thrusterOffset: { x: 1.5, z: -6.5 }, // Z centralizado no hemisfério da popa
     lineStiffness: 20000.0,
     lineDamping: 0.85,
     lineBreakingLoad: 102 * 9807,
@@ -464,16 +465,20 @@ function loadModel() {
         if (!boxInitialized) realBox.setFromObject(modelObject);
 
         const center = realBox.getCenter(new THREE.Vector3());
+        // Trava o Eixo X no 0 absoluto para que detalhes assimétricos (ex: um bote só de um lado do barco) não desalinhem a quilha das setas!
+        center.x = 0;
         modelObject.position.sub(center);
 
         // A filtragem "anti-lixo" centralizou o rebocador perfeitamente no Y=0.
         // Se a água está em Y=0, metade do rebocador estava afundando!
         // Precisamos elevar ele da água baseado no tamanho real do casco (baseY).
         const size = realBox.getSize(new THREE.Vector3());
-        modelObject.position.y += size.y * 0.15; // Sobe o rebocador para nivelar a Linha d'agua
+        tugVisualElevationY = size.y * 0.15;
+        modelObject.position.y += tugVisualElevationY; // Sobe o rebocador para nivelar a Linha d'agua
 
         hullGroup.add(modelObject);
         updateCG();
+        updateMooringPoints(); // Dispara recálculo com a elevação visual populada
 
         const scale = modelObject.scale;
         ui.scaleParams.textContent = `${scale.x.toFixed(1)}, ${scale.y.toFixed(1)}, ${scale.z.toFixed(1)}`;
@@ -523,6 +528,9 @@ function loadCargoShip() {
         if (!boxInitialized) realBox.setFromObject(ship);
 
         const center = realBox.getCenter(new THREE.Vector3());
+
+        // Trava o eixo X no zero absoluto para garantir que guindastes assimétricos não entortem o CG físico
+        center.x = 0;
 
         // Centraliza de verdade o CG físico e rebaixa no Y perfeitamente, usando as medidas completas e justas!
         ship.position.sub(center);
@@ -709,10 +717,20 @@ function updateCG() {
 function updateMooringPoints() {
     const bowZ = parseFloat(ui.bowPointZ.value);
     const bowX = parseFloat(ui.bowPointX.value);
-    const bowY = parseFloat(ui.bowPointY.value);
+
+    // =========================================================================
+    // CONTROLE DE ALTURA DOS MOORING POINTS (Pinos Ciano/Magenta do Rebocador)
+    // =========================================================================
+    // O valor de "Ajuste Fino" provém diretamente do Slider HTML (ui.bowPointY.value).
+    // A inclusão do "tugVisualElevationY" compensa matematicamente o fato de o casco 
+    // ter sido elevado da água pós-purificação, evitando que os pinos afundem no convés.
+    const bowY = parseFloat(ui.bowPointY.value) + tugVisualElevationY;
+
     const sternZ = parseFloat(ui.sternPointZ.value);
     const sternX = parseFloat(ui.sternPointX.value);
-    const sternY = parseFloat(ui.sternPointY.value);
+
+    // O mesmo princípio de flutuação dinâmica se repete para o pino da Popa
+    const sternY = parseFloat(ui.sternPointY.value) + tugVisualElevationY;
 
     mooringState.bow.mooringPoint.set(bowX, bowY, bowZ);
     mooringState.stern.mooringPoint.set(sternX, sternY, sternZ);
@@ -976,6 +994,43 @@ function setupUIEvents() {
     };
 
     window.addEventListener('message', handleAsdControlMessage);
+
+    // --- Persistência Local dos Ajustes (CG, Y e Pontos de Atracação) ---
+    const saveAdjustmentsBtn = document.getElementById('saveAdjustmentsBtn');
+    if (saveAdjustmentsBtn) {
+        saveAdjustmentsBtn.addEventListener('click', () => {
+            const config = {
+                cgZ: ui.cgZ.value, cgX: ui.cgX.value, elevationY: ui.elevationY.value,
+                bowPointZ: ui.bowPointZ.value, bowPointX: ui.bowPointX.value, bowPointY: ui.bowPointY.value,
+                sternPointZ: ui.sternPointZ.value, sternPointX: ui.sternPointX.value, sternPointY: ui.sternPointY.value
+            };
+            localStorage.setItem('tugSimAdjustments', JSON.stringify(config));
+            const oldTxt = saveAdjustmentsBtn.textContent;
+            saveAdjustmentsBtn.textContent = '✅ Salvo Localmente com Sucesso!';
+            saveAdjustmentsBtn.classList.replace('btn-success', 'btn-primary'); // Feedback temporário
+            setTimeout(() => {
+                saveAdjustmentsBtn.textContent = oldTxt;
+                saveAdjustmentsBtn.classList.replace('btn-primary', 'btn-success');
+            }, 2000);
+        });
+    }
+
+    // Carregar configurações locais na inicialização se existirem
+    const savedConfigs = localStorage.getItem('tugSimAdjustments');
+    if (savedConfigs) {
+        try {
+            const config = JSON.parse(savedConfigs);
+            const adjustKeys = ['cgZ', 'cgX', 'elevationY', 'bowPointZ', 'bowPointX', 'bowPointY', 'sternPointZ', 'sternPointX', 'sternPointY'];
+            adjustKeys.forEach(key => {
+                if (config[key] !== undefined && ui[key]) {
+                    ui[key].value = config[key];
+                    ui[key].dispatchEvent(new Event('input')); // Recalcula física/texto imediatamente
+                }
+            });
+        } catch (e) {
+            console.error("Erro carregando configurações", e);
+        }
+    }
 }
 
 function toggleMooring(type) {
