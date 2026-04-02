@@ -42,6 +42,7 @@
             border-radius: 15px;
             border: 1px solid var(--border-color);
             user-select: none;
+            transform: scale(0.8);
         }
         .controls-row {
             display: flex;

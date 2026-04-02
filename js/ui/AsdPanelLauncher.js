@@ -8,7 +8,7 @@
 
 /* ===== Custom Element: ASD Panel Launcher (autônomo) ===== */
 class AsdPanelLauncher extends HTMLElement {
-  _initialState = { top: '70px', right: '12px', left: 'auto', width: '420px', height: '580px' };
+  _initialState = { top: '70px', right: '12px', left: 'auto', width: '336px', height: '480px' };
   _isFullScreen = false;
   _lastState = { ...this._initialState };
 
@@ -26,7 +26,7 @@ class AsdPanelLauncher extends HTMLElement {
       .win { position: fixed;
              display: none; pointer-events: auto; background: #fff; color: #111; border-radius: 14px;
              box-shadow: 0 24px 60px rgba(0,0,0,.25); border: 1px solid #e7e7e7;
-             min-width: 420px; min-height: 580px; overflow: hidden;
+             min-width: 336px; min-height: 480px; overflow: hidden;
              transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .hdr { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; cursor: move;
