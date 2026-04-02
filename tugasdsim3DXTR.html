@@ -297,8 +297,33 @@
         <button id="clearBuoys" class="btn-sec btn-margin-top full-width">Limpar Bóias</button>
     </div>
 
+    <div id="panel-ship-helm" class="popup-panel">
+        <div class="panel-header">Governo do Navio</div>
+        <div class="section">
+            <div class="section-title">Telégrafo (RPM Principal)</div>
+            <div class="flex-between"><label>Máquinas (%)</label><span class="val" id="valShipEngine">0</span></div>
+            <input id="shipEngine" type="range" min="-30" max="100" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>[ A Ré ]</span><span>[ Avante ]</span></div>
+        </div>
+        <div class="section">
+            <div class="section-title">Leme (Timão)</div>
+            <div class="flex-between"><label>Ângulo (°)</label><span class="val" id="valShipRudder">0</span></div>
+            <input id="shipRudder" type="range" min="-35" max="35" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>Bombordo</span><span>Boreste</span></div>
+            <button id="btnCenterRudder" class="btn-sec full-width btn-margin-top">Meio Leme (0°)</button>
+        </div>
+        <div class="section">
+            <div class="section-title">Bow Thruster</div>
+            <div class="flex-between"><label>Potência (%)</label><span class="val" id="valShipBowThruster">0</span></div>
+            <input id="shipBowThruster" type="range" min="-100" max="100" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>Impulso BB</span><span>Impulso BE</span></div>
+            <button id="btnCenterThruster" class="btn-sec full-width btn-margin-top">Parar Thruster (0%)</button>
+        </div>
+    </div>
+
     <div id="right-sidebar">
         <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD">🕹️</button>
+        <button class="sidebar-btn" data-panel-id="panel-ship-helm" title="Governo do Navio">🚢</button>
         <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos">🧮</button>
         <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação">⚓</button>
         <button class="sidebar-btn" data-panel-id="panel-maneuvers" title="Manobras">🗺️</button>

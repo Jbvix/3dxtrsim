@@ -62,6 +62,7 @@ const shipState = {
 };
 
 const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
+const shipControls = { engine: 0, rudder: 0, bowThruster: 0 };
 const shipPhysics = {
     mass: 5000000, 
     momentOfInertia: 150000000, 
@@ -123,6 +124,14 @@ const constructionSettings = {
 // ===== UI Refs =====
 const ui = {
     topTugSpeed: document.getElementById('topTugSpeed'),
+    shipEngine: document.getElementById('shipEngine'),
+    valShipEngine: document.getElementById('valShipEngine'),
+    shipRudder: document.getElementById('shipRudder'),
+    valShipRudder: document.getElementById('valShipRudder'),
+    btnCenterRudder: document.getElementById('btnCenterRudder'),
+    shipBowThruster: document.getElementById('shipBowThruster'),
+    valShipBowThruster: document.getElementById('valShipBowThruster'),
+    btnCenterThruster: document.getElementById('btnCenterThruster'),
     topShipSpeed: document.getElementById('topShipSpeed'),
     topWind: document.getElementById('topWind'),
     topCurrent: document.getElementById('topCurrent'),
@@ -740,6 +749,30 @@ function deleteManeuver(index) {
 }
 
 function setupUIEvents() {
+    if(ui.shipEngine) {
+        ui.shipEngine.addEventListener('input', (e) => {
+            shipControls.engine = parseInt(e.target.value);
+            ui.valShipEngine.textContent = shipControls.engine;
+        });
+        ui.shipRudder.addEventListener('input', (e) => {
+            shipControls.rudder = parseInt(e.target.value);
+            ui.valShipRudder.textContent = shipControls.rudder;
+        });
+        ui.btnCenterRudder.addEventListener('click', () => {
+            shipControls.rudder = 0;
+            ui.shipRudder.value = 0;
+            ui.valShipRudder.textContent = '0';
+        });
+        ui.shipBowThruster.addEventListener('input', (e) => {
+            shipControls.bowThruster = parseInt(e.target.value);
+            ui.valShipBowThruster.textContent = shipControls.bowThruster;
+        });
+        ui.btnCenterThruster.addEventListener('click', () => {
+            shipControls.bowThruster = 0;
+            ui.shipBowThruster.value = 0;
+            ui.valShipBowThruster.textContent = '0';
+        });
+    }
     ui.cgX.addEventListener('input', updateCG);
     ui.cgZ.addEventListener('input', updateCG);
     ui.elevationY.addEventListener('input', (e) => {
@@ -1211,7 +1244,29 @@ function updatePhysics(dt) {
     tugState.yaw += tugState.yawRate * dt;
 
     // --- Ship Integration ---
+    
+    // Engine and Helm Force
+    const shipForwardDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
+    const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); // 30 ton max thrust
+    totalShipForce.add(engineForce);
+    
+    // Bow Thruster Force (lateral thrust at the bow)
+    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    const bowThrusterForce = shipRightDir.clone().multiplyScalar((shipControls.bowThruster / 100.0) * 100000); // 10 ton transverse mapping
+    totalShipForce.add(bowThrusterForce);
+    
+    // Torque from Bow Thruster (assuming lever arm of 60 meters forward of CG)
+    totalShipTorque -= (shipControls.bowThruster / 100.0) * 100000 * 60; // Turn yaw
+    
+    // Torque from Rudder (rudder turn requires flow speed, either from ship moving or prop wash)
+    const effectiveWaterFlow = Math.abs(shipState.velocity.length()) + Math.max(0, (shipControls.engine / 100.0) * 3.0);
+    const rudderAngleRad = THREE.MathUtils.degToRad(-shipControls.rudder);
+    // Large lever arm in the back (e.g. 70m)
+    const rudderTorque = rudderAngleRad * effectiveWaterFlow * 25000000;
+    totalShipTorque += rudderTorque;
+    
     debugData.shipForce = totalShipForce.length();
+
     debugData.shipTorque = totalShipTorque;
     debugData.tugForce = totalForce.length();
     const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
