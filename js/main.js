@@ -61,6 +61,7 @@ const shipState = {
     boundingBox: new THREE.Box3()
 };
 
+const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
 const shipPhysics = {
     mass: 5000000, 
     momentOfInertia: 150000000, 
@@ -1150,7 +1151,8 @@ function updatePhysics(dt) {
                 let totalLineForce = springForceMagnitude - dampingForceMagnitude;
                 if (totalLineForce < 0) totalLineForce = 0;
 
-                const tensionTons = totalLineForce / 9807; 
+                const tensionTons = totalLineForce / 9807;
+                debugData.lineTension = totalLineForce; 
                 const tensionPercent = Math.min((totalLineForce / physics.lineBreakingLoad) * 100, 100);
                 tensionVal.textContent = tensionTons.toFixed(1);
                 tensionBar.style.width = `${tensionPercent}%`;
@@ -1200,6 +1202,9 @@ function updatePhysics(dt) {
     tugState.yaw += tugState.yawRate * dt;
 
     // --- Ship Integration ---
+    debugData.shipForce = totalShipForce.length();
+    debugData.shipTorque = totalShipTorque;
+    debugData.tugForce = totalForce.length();
     const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
     shipState.velocity.add(shipLinAcc.multiplyScalar(dt));
     shipState.velocity.multiplyScalar(1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
@@ -1338,6 +1343,22 @@ function updateScene() {
     // Wind and Current Top Bar Update
     if (ui.topWind) ui.topWind.textContent = `${environmentControls.wind.strength.toFixed(0)} kn (${environmentControls.wind.direction.toFixed(0)}°)`;
     if (ui.topCurrent) ui.topCurrent.textContent = `${environmentControls.current.strength.toFixed(1)} kn (${environmentControls.current.direction.toFixed(0)}°)`;
+
+    // Debug Panel Update
+    const debugPanel = document.getElementById('debug-log-panel');
+    if (debugPanel) {
+        debugPanel.innerHTML = `
+            <b>LOGS FÍSICOS (EM TEMPO REAL):</b><br/>
+            [REBOC] Força Empuxo: ${(debugData.tugForce || 0).toFixed(0)} N<br/>
+            [CABO] Tensão Lida: ${((debugData.lineTension || 0) / 9807).toFixed(2)} TON<br/>
+            [CABO] Ponto Ruptura: ${(physics.lineBreakingLoad / 9807).toFixed(0)} TON<br/>
+            <hr style="border-color:#333; margin:5px 0;">
+            [NAVIO] Massa Física: ${shipPhysics.mass.toLocaleString()} kg<br/>
+            [NAVIO] Inércia Rot.: ${shipPhysics.momentOfInertia.toLocaleString()}<br/>
+            [NAVIO] Força Recebida: ${(debugData.shipForce || 0).toFixed(0)} N<br/>
+            [NAVIO] Torque Aplicado: ${(debugData.shipTorque || 0).toFixed(0)} Nm
+        `;
+    }
 }
 
 function updateMooringButtonsState() {
