@@ -499,7 +499,10 @@ function loadCargoShip() {
         
         // = Colisionador Físico = (Oculto)
         // Usamos BoxGeometry e setFromObject vai calcular em cima disto super leve!
-        const colliderGeo = new THREE.BoxGeometry(size.x * 0.95, size.y * 1.5, size.z * 0.98);
+        const isZAxisLongerCollider = size.z > size.x;
+        const shipLength = isZAxisLongerCollider ? size.z * 0.95 : size.x * 0.95;
+        const shipWidth = isZAxisLongerCollider ? size.x * 0.5 : size.z * 0.5; // Reduz a largura pra evitar colisao com guindastes invisiveis
+        const colliderGeo = new THREE.BoxGeometry(isZAxisLongerCollider ? shipWidth : shipLength, size.y * 1.5, isZAxisLongerCollider ? shipLength : shipWidth);
         const colliderMat = new THREE.MeshBasicMaterial({ visible: false });
         const shipCollider = new THREE.Mesh(colliderGeo, colliderMat);
         
@@ -511,6 +514,7 @@ function loadCargoShip() {
         
         // == Ancoradouros / Cabeços do Navio ==
         const isZAxisLonger = size.z > size.x;
+        shipPhysics.isZAxisLonger = isZAxisLonger;
         // Pela screenshot e solicitação, descemos o local do convés ainda mais em relação ao centro da malha (submerso parcialmente).
         const deckY = -(size.y * 0.18); 
 
@@ -1246,12 +1250,13 @@ function updatePhysics(dt) {
     // --- Ship Integration ---
     
     // Engine and Helm Force
-    const shipForwardDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
+    const localForward = shipPhysics.isZAxisLonger ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+    const shipForwardDir = localForward.applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
     const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); // 30 ton max thrust
     totalShipForce.add(engineForce);
     
     // Bow Thruster Force (lateral thrust at the bow)
-    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipPhysics.isZAxisLonger ? -Math.PI/2 : Math.PI/2);
     const bowThrusterForce = shipRightDir.clone().multiplyScalar((shipControls.bowThruster / 100.0) * 100000); // 10 ton transverse mapping
     totalShipForce.add(bowThrusterForce);
     
