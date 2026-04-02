@@ -1288,56 +1288,63 @@ function updatePhysics(dt) {
 
     // --- Ship Integration ---
     
-    // Engine and Helm Force
+    // ==========================================
+    // SISTEMA UNIFICADO DE VETORES DIRECIONAIS 
+    // (Garante Simetria Perfeita entre Boreste-BE(+) e Bombordo-BB(-))
+    // ==========================================
     const localForward = shipPhysics.isZAxisLonger ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
-    const shipForwardDir = localForward.applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
-    const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); // 30 ton max thrust
+    const shipForwardDir = localForward.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
+    // +PI/2 garante que o vetor "Direito" aponte para Estibordo (Starboard/BE) indepente da escala
+    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2); 
+
+    // === FORÇA E TORQUE MILIMETRADO ===
+    
+    // 1. Motor Hélice Principal
+    const engineForce = shipForwardDir.clone().multiplyScalar((shipControls.engine / 100.0) * 300000); 
     totalShipForce.add(engineForce);
     
-    // Bow Thruster Force (lateral thrust at the bow limitando em 5 toneladas para um cargo em vez das 10 da lancha)
-    const shipRightDir = shipForwardDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipPhysics.isZAxisLonger ? -Math.PI/2 : Math.PI/2);
-    const bowThrusterForce = shipRightDir.clone().multiplyScalar((shipControls.bowThruster / 100.0) * 50000); 
+    // 2. Bow Thruster (Força na proa empurra a frente direto pro lado e gera Torque Direto)
+    const bowThrustAmt = (shipControls.bowThruster / 100.0); // + (BE) ou - (BB)
+    const bowThrusterForce = shipRightDir.clone().multiplyScalar(bowThrustAmt * 50000); 
     totalShipForce.add(bowThrusterForce);
+    // Força à BORESTE na Proa cria Torque pra BORESTE (+)
+    totalShipTorque += bowThrustAmt * 50000 * 60; 
     
-    // Torque from Bow Thruster (lever arm of 60m)
-    totalShipTorque -= (shipControls.bowThruster / 100.0) * 50000 * 60; 
-    
-    // Torque from Rudder (Prop Wash bem menor (1.5) pra não gerar giro insano parado e fluxo de agua dominante)
-    // Velocidade forward pura + lavagem de helice
+    // 3. Sistema Dinâmico do Leme (Giro gera Deriva)
     const forwardSpeed = Math.abs(shipState.velocity.dot(shipForwardDir));
-    const effectiveWaterFlow = forwardSpeed + Math.max(0, (shipControls.engine / 100.0) * 1.5);
-    const rudderAngleRad = THREE.MathUtils.degToRad(-shipControls.rudder);
+    const propWash = Math.max(0, (shipControls.engine / 100.0) * 1.5);
+    const effectiveWaterFlow = forwardSpeed + propWash;
     
-    // Multiplicador foi reduzido de 25M pra 400 Mil. Um cargo demora ate 2 minutos pra fazer uma curva fechada
+    // Leme de slider é -35 a 35. (+) = Boreste, (-) = Bombordo.
+    const rudderAngleRad = THREE.MathUtils.degToRad(shipControls.rudder);
+    
+    // Torque do Leme: Leme à Direita (+) curva o navio pra Direita (+)
     const rudderTorque = rudderAngleRad * effectiveWaterFlow * 400000;
     totalShipTorque += rudderTorque;
     
-    // NOVIDADE: Ação de Pivot Físico REAL based on Diagrama (Força lateral empurra a popa pra fora, causando Deriva)
-    const rudderLateralForce = shipRightDir.clone().multiplyScalar(rudderTorque / 60.0);
+    // Força Lateral da Popa: Para virar à direita (+), a água empurra a popa para a Esquerda / Bombordo (-shipRightDir)
+    // Portanto derivamos a força invertendo o sinal algébrico!
+    const rudderLateralForce = shipRightDir.clone().multiplyScalar(- (rudderTorque / 60.0));
     totalShipForce.add(rudderLateralForce);
     
     debugData.shipForce = totalShipForce.length();
-
     debugData.shipTorque = totalShipTorque;
     debugData.tugForce = totalForce.length();
+    
     const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
     shipState.velocity.add(shipLinAcc.multiplyScalar(dt));
     
-    // DECOMPOSIÇÃO DE ARRASTO (Resistência lateral de água para evitar Drift excessivo parecendo que gira em círculos patinando)
-    const localFwd = shipPhysics.isZAxisLonger ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
-    const sFwd = localFwd.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
-    const sRight = sFwd.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+    // === O MILAGRE DA DERIVA (Drag Lateral Anti-Puck) ====
+    let velFwd = shipState.velocity.dot(shipForwardDir);
+    let velLat = shipState.velocity.dot(shipRightDir);
     
-    let velFwd = shipState.velocity.dot(sFwd);
-    let velLat = shipState.velocity.dot(sRight);
-    
-    // Arrasto brutal no eixo lateral (O casco corta a agua pra frente, mas resiste de lado)
+    // O navio é cortante linearmente, mas uma "Placa de Aço" lateralmente.
     velFwd *= (1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
-    velLat *= (1.0 - (1.0 - 0.90) * dt * 60); // 90% drag lateral brutal
+    velLat *= (1.0 - (1.0 - 0.90) * dt * 60); // O mar estrangula 90% da escorregada lateral
     
-    shipState.velocity.copy(sFwd.multiplyScalar(velFwd).add(sRight.multiplyScalar(velLat)));
+    shipState.velocity.copy(shipForwardDir.clone().multiplyScalar(velFwd).add(shipRightDir.clone().multiplyScalar(velLat)));
 
-    const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
+    // const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
     shipState.yawRate += shipAngAcc * dt;
     shipState.yawRate *= (1.0 - (1.0 - shipPhysics.angularDamping) * dt * 60);
 
