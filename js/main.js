@@ -805,14 +805,14 @@ function setupUIEvents() {
             shipControls.draft = draftVal;
             ui.valShipDraft.textContent = draftVal.toFixed(1);
             
-            // Mapear calado de 5m (10k ton) a 10m (60k ton)
-            const pct = (draftVal - 5.0) / 5.0;
+            // Mapear calado de 5m (10k ton) a 15m (60k ton)
+            const pct = (draftVal - 5.0) / 10.0;
             shipPhysics.mass = 10000000 + (pct * 50000000);
             shipPhysics.momentOfInertia = 150000000 + (pct * 600000000);
             
-            // Afundar vizualmente o navio (ate 10 m de variação pura de Y pra baixo da agua)
+            // Afundar vizualmente o navio (ate 3 m de variação pura de Y pra baixo da agua)
             if (shipState.baseY !== undefined) {
-                shipState.position.y = shipState.baseY - (pct * 8.0);
+                shipState.position.y = shipState.baseY + 1.5 - (pct * 3.0);
             }
         });
     }
