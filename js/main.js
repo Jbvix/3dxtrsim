@@ -480,11 +480,26 @@ function loadCargoShip() {
     
     const onModelLoad = (ship) => {
         const bbox = new THREE.Box3().setFromObject(ship);
-        const center = bbox.getCenter(new THREE.Vector3());
+        // Encontrar a malha principal (Casco) com mais vértices para ser a âncora real do bounding box
+        // Isso ignora malhas invisíveis ou rigging esticado que estava distorcendo o Centro de Massa!
+        let hullMesh = null;
+        let maxVerts = 0;
+        ship.traverse((child) => {
+            if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+                const count = child.geometry.attributes.position.count;
+                if (count > maxVerts) {
+                    maxVerts = count;
+                    hullMesh = child;
+                }
+            }
+        });
         
-        // Centraliza o navio em todos os eixos no origin do Group
-        // REMOVIDO: ship.position.sub(center); // O BoundingBox sofria anomalias de malhas invisiveis puxando o Pivot (CG) 100 metros pra fora do casco!
-        // Agora usamos a origem (0,0,0) nativa do modelo 3D (normalmente midships na linha d'agua) para rotacionar perfeitamente.
+        // Pega o centro baseado PURAMENTE no casco sólido do navio!
+        const realBox = new THREE.Box3().setFromObject(hullMesh ? hullMesh : ship);
+        const center = realBox.getCenter(new THREE.Vector3());
+        
+        // Baixa o navio de volta pra água e centra o CG perfeitamente no meio do chaparraiz
+        ship.position.sub(center);
         
                 shipGroup = new THREE.Group();
         shipGroup.add(ship);
@@ -1277,7 +1292,20 @@ function updatePhysics(dt) {
     debugData.tugForce = totalForce.length();
     const shipLinAcc = totalShipForce.clone().divideScalar(shipPhysics.mass);
     shipState.velocity.add(shipLinAcc.multiplyScalar(dt));
-    shipState.velocity.multiplyScalar(1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
+    
+    // DECOMPOSIÇÃO DE ARRASTO (Resistência lateral de água para evitar Drift excessivo parecendo que gira em círculos patinando)
+    const localFwd = shipPhysics.isZAxisLonger ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+    const sFwd = localFwd.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), shipState.yaw);
+    const sRight = sFwd.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+    
+    let velFwd = shipState.velocity.dot(sFwd);
+    let velLat = shipState.velocity.dot(sRight);
+    
+    // Arrasto brutal no eixo lateral (O casco corta a agua pra frente, mas resiste de lado)
+    velFwd *= (1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
+    velLat *= (1.0 - (1.0 - 0.90) * dt * 60); // 90% drag lateral brutal
+    
+    shipState.velocity.copy(sFwd.multiplyScalar(velFwd).add(sRight.multiplyScalar(velLat)));
 
     const shipAngAcc = totalShipTorque / shipPhysics.momentOfInertia;
     shipState.yawRate += shipAngAcc * dt;
