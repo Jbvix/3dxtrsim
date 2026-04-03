@@ -820,24 +820,28 @@ function makeDraggable(panel) {
     let isDragging = false;
     let offset = new THREE.Vector2();
 
-    header.addEventListener('mousedown', (e) => {
+    header.addEventListener('pointerdown', (e) => {
         isDragging = true;
         offset.x = e.clientX - panel.offsetLeft;
         offset.y = e.clientY - panel.offsetTop;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
+        header.setPointerCapture(e.pointerId); // Assegura que touch não seja perdido
     });
 
-    function onMouseMove(e) {
+    function onPointerMove(e) {
         if (!isDragging) return;
         panel.style.left = `${e.clientX - offset.x}px`;
         panel.style.top = `${e.clientY - offset.y}px`;
     }
 
-    function onMouseUp() {
+    function onPointerUp(e) {
         isDragging = false;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener('pointercancel', onPointerUp);
+        if(e.pointerId) header.releasePointerCapture(e.pointerId);
     }
 }
 
