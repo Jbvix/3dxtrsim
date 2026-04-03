@@ -1762,7 +1762,7 @@ function updatePhysics(dt) {
 
     // O navio é cortante linearmente, mas uma "Placa de Aço" lateralmente.
     velFwd *= (1.0 - (1.0 - shipPhysics.linearDamping) * dt * 60);
-    velLat *= (1.0 - (1.0 - 0.90) * dt * 60); // O mar estrangula 90% da escorregada lateral
+    velLat *= (1.0 - (1.0 - 0.985) * dt * 60); // O mar estrangula a escorregada, mas permite que o rebocador empurre
 
     shipState.velocity.copy(shipForwardDir.clone().multiplyScalar(velFwd).add(shipRightDir.clone().multiplyScalar(velLat)));
 
@@ -1786,29 +1786,95 @@ function checkCollisions() {
 
     if (shipColliderMesh && shipGroup) {
         shipColliderMesh.updateWorldMatrix(true, false);
+        
+        // Mantém a caixa World-Space apenas para top-down telemetry ou limites externos globais
         const shipBox = new THREE.Box3().setFromObject(shipColliderMesh);
         shipState.boundingBox.copy(shipBox);
 
-        if (tugState.boundingBox.intersectsBox(shipBox)) {
-            const overlap = new THREE.Vector3();
-            const tugCenter = tugState.boundingBox.getCenter(new THREE.Vector3());
-            const shipCenter = shipBox.getCenter(new THREE.Vector3());
-            overlap.subVectors(tugCenter, shipCenter);
+        // --- COLISÃO OOBB (REBOCADOR X NAVIO) ---
+        // 1. Traduz a posição global do rebocador para o espaço local do Navio
+        const tugWorldPos = cgPivot.position.clone();
+        const tugLocalPos = shipColliderMesh.worldToLocal(tugWorldPos);
+        
+        // 2. Extrai dimensões ideais do colisor local (No espaço local, o navio sempre está em yaw=0)
+        const hw = shipColliderMesh.geometry.parameters.width / 2;
+        const hd = shipColliderMesh.geometry.parameters.depth / 2;
+        
+        // 3. Raio de colisão do Rebocador (Minkowski Sum simplificada em 2D)
+        const TUG_RADIUS = 6.0; // Reduzido para encostar perfeitamente o casco 
 
-            const tugSize = tugState.boundingBox.getSize(new THREE.Vector3());
-            const shipSize = shipBox.getSize(new THREE.Vector3());
+        // 4. Encontra o ponto do perímetro do Navio mais próximo ao centro do Rebocador
+        const closestPointLocal = new THREE.Vector3(
+            THREE.MathUtils.clamp(tugLocalPos.x, -hw, hw),
+            tugLocalPos.y, // Ignoramos a altura (2D XZ collision)
+            THREE.MathUtils.clamp(tugLocalPos.z, -hd, hd)
+        );
 
-            const overlapX = (tugSize.x / 2) + (shipSize.x / 2) - Math.abs(overlap.x);
-            const overlapZ = (tugSize.z / 2) + (shipSize.z / 2) - Math.abs(overlap.z);
+        // 5. Testa a distância
+        const distLocal = tugLocalPos.distanceTo(closestPointLocal);
 
-            if (overlapX > 0 && overlapZ > 0) {
-                if (overlapX < overlapZ) {
-                    tugState.position.x += overlapX * Math.sign(overlap.x);
-                    tugState.velocity.x *= -0.5;
-                } else {
-                    tugState.position.z += overlapZ * Math.sign(overlap.z);
-                    tugState.velocity.z *= -0.5;
-                }
+        if (distLocal < TUG_RADIUS) {
+            // COLISÃO FÍSICA OCORRENDO!
+            
+            let penetration = TUG_RADIUS - distLocal;
+            let normalLocal = new THREE.Vector3();
+
+            // Resolve caso o rebocador esteja profundamente fincado no navio (Tunneling)
+            if (distLocal < 0.001) {
+                const distToRight = hw - tugLocalPos.x;
+                const distToLeft = tugLocalPos.x - (-hw);
+                const distToFront = hd - tugLocalPos.z;
+                const distToBack = tugLocalPos.z - (-hd);
+                const minDist = Math.min(distToRight, distToLeft, distToFront, distToBack);
+
+                if (minDist === distToRight) normalLocal.set(1, 0, 0);
+                else if (minDist === distToLeft) normalLocal.set(-1, 0, 0);
+                else if (minDist === distToFront) normalLocal.set(0, 0, 1);
+                else normalLocal.set(0, 0, -1);
+                
+                penetration = TUG_RADIUS + minDist; // Profundidade total para expulsar
+            } else {
+                normalLocal.subVectors(tugLocalPos, closestPointLocal).normalize();
+            }
+
+            // Converte a normal Local de volta para o Mundo real (respeitando a rotação do navio)
+            const normalWorld = normalLocal.applyQuaternion(shipGroup.quaternion).normalize();
+
+            // Aplica Resolução Posicional Estrita (Oculta a parede invisível!)
+            tugState.position.add(normalWorld.clone().multiplyScalar(penetration));
+
+            // Componente de Velocidade (Bouncing e Transferência de Empuxo/Momento)
+            const velDot = tugState.velocity.dot(normalWorld);
+            if (velDot < 0) { 
+                // Rebocador bate secando o momento dele contra o casco (Bouncing inelástico)
+                const tugBounceImpulse = normalWorld.clone().multiplyScalar(Math.abs(velDot) * 1.4);
+                tugState.velocity.add(tugBounceImpulse);
+                
+                // Repassa o impacto mecânico para o navio! (Empurrar para valer)
+                // O multiplicador ajustado para translação linear forte (Aumentado para 100.0)
+                const shipImpulseMagnitude = ((Math.abs(velDot) * physics.mass) / shipPhysics.mass) * 100.0;
+                
+                // Terceira Lei de Newton (Ação e Reação): 
+                // A 'normalWorld' aponta para FORA do navio. Para empurrar o navio, aplicamos a energia ao CONTRÁRIO (-)
+                const pushVector = normalWorld.clone().multiplyScalar(-shipImpulseMagnitude);
+                shipState.velocity.add(pushVector);
+
+                // Transferência de Torque (Girar o navio ao empurrar na proa ou popa!)
+                // Alavanca = Posição do Rebocador - Centro do Navio
+                const rShip = new THREE.Vector3().subVectors(tugWorldPos, shipState.position);
+                // Produto vetorial 2D pseudo-torque: Força em X girando em Z, e vice-versa
+                // O impulso está divido na massa, então multiplicamos pela massa do navio de volta para virar Força (Impulso Angular real)
+                const forceApplied = pushVector.clone().multiplyScalar(shipPhysics.mass);
+                const pushTorque = (rShip.z * forceApplied.x) - (rShip.x * forceApplied.z);
+                
+                // Giro muito lento (simulando 10M Kg). A força nas pontas gira vagarosamente.
+                // Usamos uma escala em torno de 400.0 como amortecedor de momento angular
+                shipState.yawRate += ((pushTorque / 400.0) / shipPhysics.momentOfInertia);
+                
+                // ATRITO DA BORRACHA (Fender Friction)
+                // Se o rebocador está empurrando contra a parede de aço, a defensa de borracha "morde" o casco
+                // e estabiliza firmemente a rotação. Cortamos drasticamente o Yaw momentâneo do rebocador aqui:
+                tugState.yawRate *= 0.70; 
             }
         }
     }
