@@ -1,6 +1,6 @@
 # ⚓ CoastalBrasil ASD TUG SIMULATOR (v3.4)
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/a-badge/deploy-status)](https://3dxtrsim.netlify.app)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/378d4ef0-77ec-4eda-9b9c-1687921ca5b4/deploy-status)](https://app.netlify.com/projects/3dxtrsim/deploys)
 > **Laboratório Hidrodinâmico Digital de Rebocadores Azimuth Stern Drive.**
 
 Este projeto baseia-se em simulador numérico de operações navais severas construído sobre matemática crua e renderização tridimensional no navegador. Ele transcende a lógica clássica de jogos e propõe regras rígidas de atracação portuária via forças vetoriais para fins de treinamento e análise.
