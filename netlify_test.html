@@ -1,0 +1,461 @@
+<!--
+  Título: tugasdsim3DXTR.html - Cena Principal com Three.js
+  Autor: Jossian Brito
+  Data da última modificação: 02/04/2026 09:28
+  Versão: 3.4
+  Descrição: Gerencia cena, câmera, renderer, objetos 3D, física e controles
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Simulador de Manobra de Rebocador ASD (v3.3 - Versão Completa)</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<div id="app">
+    <div id="top-telemetry-bar">
+        <div class="telemetry-item">
+            <span class="label">Rebocador</span>
+            <span class="value" id="topTugSpeed">0.0 kn</span>
+        </div>
+        <div class="telemetry-item highlight">
+            <span class="label">Navio</span>
+            <span class="value" id="topShipSpeed">0.0 kn</span>
+        </div>
+        <div class="telemetry-item">
+            <span class="label">Vento</span>
+            <span class="value" id="topWind">0 kn (0°)</span>
+        </div>
+        <div class="telemetry-item">
+            <span class="label">Corrente</span>
+            <span class="value" id="topCurrent">0.0 kn (0°)</span>
+        </div>
+    </div>
+    
+    <!-- PAINEL DE DEBUG FÍSICA -->
+    <div id="debug-log-panel" class="popup-panel" style="display:none; position:fixed;bottom:10px;left:10px; right:auto; top:auto; width: auto; background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;padding:12px;font-size:13px;z-index:9999;border:1px solid #333;pointer-events:none; border-radius: 8px;">
+        Aguardando Física...
+    </div>
+
+    <div id="panel-levels" class="popup-panel">
+        <div class="panel-header">Níveis de Treinamento</div>
+        <div id="level-buttons">
+            <button data-level-id="nivel-1" class="btn-sec">Nível 1: Atracação Básica</button>
+            <button data-level-id="nivel-2" class="btn-sec">Nível 2: Canal de Boias</button>
+            <button data-level-id="nivel-3a" class="btn-sec">Nível 3: Manobra com Vento</button>
+            <button data-level-id="nivel-3b" class="btn-sec">Nível 3: Manobra com Corrente</button>
+            <button id="clearLevelsBtn" class="btn-danger btn-margin-top full-width">Limpar Tela</button>
+        </div>
+    </div>
+    <div id="panel-asd-2d" class="popup-panel">
+        <div class="panel-header">Controles ASD</div>
+        <div class="asd-2d-container">
+            <div class="controls-row">
+                <div class="control-wrapper">
+                    <h3>Bombordo (BB)</h3>
+                    <canvas id="azimuth-control-bb"></canvas>
+                </div>
+                <div class="control-wrapper">
+                    <h3>Boreste (BE)</h3>
+                    <canvas id="azimuth-control-be"></canvas>
+                </div>
+            </div>
+            <div id="info-panel">
+                <div class="prop-section" style="flex-grow: 1; background-color: #1a2a3a; padding: 15px; border-radius: 8px;">
+                    <div class="indicator-wrapper">
+                        <div class="indicator-label">Ângulo de Giro</div>
+                        <div class="bar-container">
+                            <div id="angle-bar-bb" class="bar-fill"></div>
+                            <div id="angle-value-bb" class="bar-value">0°</div>
+                        </div>
+                    </div>
+                    <div class="indicator-wrapper">
+                        <div class="indicator-label">RPM</div>
+                        <div class="bar-container">
+                            <div id="rpm-bar-bb" class="bar-fill rpm"></div>
+                            <div id="rpm-value-bb" class="bar-value">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="prop-section" style="flex-grow: 1; background-color: #1a2a3a; padding: 15px; border-radius: 8px;">
+                     <div class="indicator-wrapper">
+                        <div class="indicator-label">Ângulo de Giro</div>
+                        <div class="bar-container">
+                            <div id="angle-bar-be" class="bar-fill"></div>
+                            <div id="angle-value-be" class="bar-value">0°</div>
+                        </div>
+                    </div>
+                    <div class="indicator-wrapper">
+                        <div class="indicator-label">RPM</div>
+                        <div class="bar-container">
+                            <div id="rpm-bar-be" class="bar-fill rpm"></div>
+                            <div id="rpm-value-be" class="bar-value">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-mooring" class="popup-panel mooring-panel-expanded">
+        <div class="panel-header">Atracação</div>
+        
+        <div class="mooring-tabs">
+            <button class="mooring-tab-btn active" onclick="switchMooringTab('tug')">Rebocador</button>
+            <button class="mooring-tab-btn" onclick="switchMooringTab('ship')">Navio</button>
+        </div>
+
+        <div id="mooring-tab-tug" class="mooring-tab-content">
+            <div class="control-group">
+                <button id="moorBow" class="btn-sec full-width" disabled>Ao Cais (Proa)</button>
+                <button id="moorStern" class="btn-sec full-width" disabled>Ao Cais (Popa)</button>
+            </div>
+            
+            <div class="section">
+                 <div class="section-title">Ao Navio Cargueiro (Lançar Cabo)</div>
+                 <div class="row" style="margin-bottom: 8px;">
+                     <button id="moorTugBowToShipBow" class="btn-sec full-width">Cabo Proa ➔ Proa Navio</button>
+                     <button id="moorTugBowToShipStern" class="btn-sec full-width">Cabo Proa ➔ Popa Navio</button>
+                 </div>
+                 <div class="row">
+                     <button id="moorTugSternToShipBow" class="btn-sec full-width">Cabo Popa ➔ Proa Navio</button>
+                     <button id="moorTugSternToShipStern" class="btn-sec full-width">Cabo Popa ➔ Popa Navio</button>
+                 </div>
+            </div>
+
+            <div class="section winch-automation">
+                <div class="section-title"><i data-lucide="anchor"></i> Guincho de Proa (Rebocador)</div>
+                <div class="winch-grid">
+                    <button id="btnBowClutch" class="winch-btn clutch off">Acoplar<br><small>Freio Aplicado</small></button>
+                    <button id="btnBowHaul" class="winch-btn action" disabled><i data-lucide="arrow-down-to-line"></i> Recolher</button>
+                    <button id="btnBowPay" class="winch-btn action" disabled><i data-lucide="arrow-up-from-line"></i> Pagar</button>
+                    <button id="btnBowRelease" class="winch-btn release">Break Release</button>
+                </div>
+                <div id="bowWinchControl" class="winch-control">
+                    <div class="flex-between"><label>Cabo (m)</label><span class="val" id="valBowLineLength">0</span></div>
+                    <input id="bowLineLength" type="range" min="1" max="50" step="0.1" value="8" disabled />
+                    <div id="bowTensionGauge" class="tension-gauge">
+                        <div class="flex-between"><label>Tensão (t)</label><span class="val" id="valBowTension">0.0</span></div>
+                        <div class="tension-bar-container"><div id="bowTensionBar" class="tension-bar"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section winch-automation">
+                <div class="section-title"><i data-lucide="anchor"></i> Guincho de Popa (Rebocador)</div>
+                <div class="winch-grid">
+                    <button id="btnSternClutch" class="winch-btn clutch off">Acoplar<br><small>Freio Aplicado</small></button>
+                    <button id="btnSternHaul" class="winch-btn action" disabled><i data-lucide="arrow-down-to-line"></i> Recolher</button>
+                    <button id="btnSternPay" class="winch-btn action" disabled><i data-lucide="arrow-up-from-line"></i> Pagar</button>
+                    <button id="btnSternRelease" class="winch-btn release">Break Release</button>
+                </div>
+                <div id="sternWinchControl" class="winch-control">
+                    <div class="flex-between"><label>Cabo (m)</label><span class="val" id="valSternLineLength">0</span></div>
+                    <input id="sternLineLength" type="range" min="1" max="50" step="0.1" value="8" disabled />
+                    <div id="sternTensionGauge" class="tension-gauge">
+                        <div class="flex-between"><label>Tensão (t)</label><span class="val" id="valSternTension">0.0</span></div>
+                        <div class="tension-bar-container"><div id="sternTensionBar" class="tension-bar"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mooring-tab-ship" class="mooring-tab-content" style="display: none;">
+        
+        <div class="section">
+             <div class="section-title">Navio Cargueiro ao Cais</div>
+             <div class="row" style="margin-bottom: 8px;">
+                 <button id="moorShipBow" class="btn-sec full-width" disabled>Ao Cais (Proa)</button>
+                 <button id="moorShipStern" class="btn-sec full-width" disabled>Ao Cais (Popa)</button>
+             </div>
+             <div id="shipBowWinchControl" class="winch-control">
+                <div class="flex-between"><label>Cabo de Proa (m)</label><span class="val" id="valShipBowLineLength">0</span></div>
+                <input id="shipBowLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                <div id="shipBowTensionGauge" class="tension-gauge">
+                    <div class="flex-between">
+                        <label>Tensão (t)</label>
+                        <span class="val" id="valShipBowTension">0.0</span>
+                    </div>
+                    <div class="tension-bar-container"><div id="shipBowTensionBar" class="tension-bar"></div></div>
+                </div>
+            </div>
+            <div id="shipSternWinchControl" class="winch-control">
+                <div class="flex-between"><label>Cabo de Popa (m)</label><span class="val" id="valShipSternLineLength">0</span></div>
+                <input id="shipSternLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                <div id="shipSternTensionGauge" class="tension-gauge">
+                    <div class="flex-between">
+                        <label>Tensão (t)</label>
+                        <span class="val" id="valShipSternTension">0.0</span>
+                    </div>
+                    <div class="tension-bar-container"><div id="shipSternTensionBar" class="tension-bar"></div></div>
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <div class="section">
+             <div class="section-title">Características do Cabo</div>
+             <div>
+                <div class="flex-between"><label>Carga de Ruptura (t)</label><span class="val" id="valBreakingLoad">102</span></div>
+                <input id="breakingLoad" type="range" min="20" max="510" step="10" value="102" />
+            </div>
+            <div>
+                <div class="flex-between"><label>Rigidez (kN/m)</label><span class="val" id="valStiffness">20</span></div>
+                <input id="stiffness" type="range" min="5" max="100" step="1" value="20" />
+            </div>
+        </div>
+    </div>
+    
+    <div id="panel-maneuvers" class="popup-panel">
+        <div class="panel-header">Manobras</div>
+        <div>
+            <input type="text" id="maneuverName" placeholder="Nome da Manobra">
+            <button id="saveManeuver" class="btn-success full-width btn-margin-top">Salvar Manobra</button>
+        </div>
+        <div class="section">
+            <ul id="maneuver-list"></ul>
+        </div>
+    </div>
+
+    <div id="panel-adjustments" class="popup-panel">
+        <div class="panel-header">Ajustes & Status</div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-status" onclick="switchAdjTab('tab-status')">Status / Física</button>
+            <button class="tab-btn" data-tab="tab-moor" onclick="switchAdjTab('tab-moor')">Atracação</button>
+        </div>
+
+        <div id="tab-status" class="tab-content active">
+            <div class="row">
+                <label>Velocidade:</label><span class="val" id="statusSpeed">0.00 nós</span>
+                <label>Rumo:</label><span class="val" id="statusHeading">0.0 °</span>
+            </div>
+            <div class="row" style="margin-bottom: 10px;">
+                <label>Veloc. Giro:</label><span class="val" id="statusYawRate">0.00 °/s</span>
+            </div>
+            <div class="row justify-end" style="display: none;"><button id="resetPosition" class="btn-sec">Resetar Posição</button></div>
+            <div>
+                <div class="flex-between"><label>CG Proa/Popa (Z)</label><span class="val" id="vZ">0.00</span></div>
+                <input id="cgZ" type="range" min="-5" max="5" step="0.01" value="0" />
+            </div>
+            <div>
+                <div class="flex-between"><label>CG Boreste/Bombordo (X)</label><span class="val" id="vX">0.00</span></div>
+                <input id="cgX" type="range" min="-5" max="5" step="0.01" value="0" />
+            </div>
+            <div>
+                <div class="flex-between"><label>Elevação na Água (Y)</label><span class="val" id="valElevationY">2.00</span></div>
+                <input id="elevationY" type="range" min="2" max="4" step="0.05" value="2" />
+            </div>
+            <div class="row flex-between">
+                <label>Escala (X,Y,Z):</label>
+                <span class="val" id="scaleParams" style="font-size: 11px;">Carregando...</span>
+            </div>
+            <div class="row flex-between" style="margin-top: 10px;">
+                <label>Cor da Pintura:</label>
+                <input type="color" id="tugColorPicker" value="#ff3300" style="background:#222; border:1px solid #444; border-radius:4px; height: 30px; width: 60px; cursor: pointer;">
+            </div>
+        </div>
+
+        <div id="tab-moor" class="tab-content">
+            <div class="section">
+                 <div class="section-title">Posição no Convés: Proa</div>
+                 <div>
+                    <div class="flex-between"><label>Proa - Posição Z (m)</label><span class="val" id="valBowPointZ">5.3</span></div>
+                    <input id="bowPointZ" type="range" min="0" max="8" step="0.1" value="5.3" />
+                </div>
+                 <div>
+                    <div class="flex-between"><label>Proa - Posição X (m)</label><span class="val" id="valBowPointX">0.0</span></div>
+                    <input id="bowPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Proa - Posição Y (m)</label><span class="val" id="valBowPointY">0.7</span></div>
+                    <input id="bowPointY" type="range" min="-4" max="4" step="0.1" value="0.7" />
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">Posição no Convés: Popa</div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição Z (m)</label><span class="val" id="valSternPointZ">-3.6</span></div>
+                    <input id="sternPointZ" type="range" min="-8" max="0" step="0.1" value="-3.6" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição X (m)</label><span class="val" id="valSternPointX">0.0</span></div>
+                    <input id="sternPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição Y (m)</label><span class="val" id="valSternPointY">-0.3</span></div>
+                    <input id="sternPointY" type="range" min="-4" max="4" step="0.1" value="-0.3" />
+                </div>
+            </div>
+        </div>
+        <div class="section-subtitle">
+            Simulador v3.4 | © 2026 Jossian Brito
+        </div>
+        <button id="resetAdjustmentsBtn" class="btn-warning full-width btn-margin-top" style="margin-bottom:10px;">🔄 Restaurar Padrões Iniciais</button>
+    </div>
+
+    <div id="panel-views" class="popup-panel">
+        <div class="panel-header">Vistas da Câmera</div>
+        <div class="section">
+             <div class="flex-between" style="margin-bottom: 8px;">
+                 <button id="focusTug" class="btn-success" style="width: 48%;">Focar Rebocador</button>
+                 <button id="focusShip" class="btn-sec" style="width: 48%;">Focar Navio</button>
+             </div>
+        </div>
+        <div class="view-buttons-grid">
+            <button id="viewBow" class="btn-sec">Proa</button>
+            <button id="viewStern" class="btn-sec">Popa</button>
+            <button id="viewStarboard" class="btn-sec">Bombordo</button>
+            <button id="viewPort" class="btn-sec">Boreste</button>
+            <button id="viewOrbit" class="full-span">Órbita Livre</button>
+        </div>
+    </div>
+    
+    <div id="panel-environment" class="popup-panel">
+        <div class="panel-header">Condições Ambientais</div>
+        <div class="section">
+            <div class="section-title">Vento</div>
+            <div>
+                <div class="flex-between"><label>Força (nós)</label><span class="val" id="valWindStrength">0</span></div>
+                <input id="windStrength" type="range" min="0" max="50" step="1" value="0" />
+            </div>
+            <div>
+                <div class="flex-between"><label>Direção (°)</label><span class="val" id="valWindDirection">0</span></div>
+                <input id="windDirection" type="range" min="0" max="360" step="1" value="0" />
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-title">Corrente</div>
+            <div>
+                <div class="flex-between"><label>Força (nós)</label><span class="val" id="valCurrentStrength">0</span></div>
+                <input id="currentStrength" type="range" min="0" max="5" step="0.1" value="0" />
+            </div>
+            <div>
+                <div class="flex-between"><label>Direção (°)</label><span class="val" id="valCurrentDirection">0</span></div>
+                <input id="currentDirection" type="range" min="0" max="360" step="1" value="0" />
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-editor" class="popup-panel">
+         <div class="panel-header">Editor do Cenário</div>
+         <div id="construction-tools">
+            <div class="section-title">Construtor Portuário</div>
+            <button id="toggleConstructionMode" class="btn-warn full-width">Entrar no Modo de Construção</button>
+            <div id="construction-options" class="winch-control">
+                <div class="section">
+                    <div class="flex-between"><label>Elevação (m)</label><span class="val" id="valStructureElevation">1.0</span></div>
+                    <input id="structureElevation" type="range" min="0.5" max="5" step="0.1" value="1.0" />
+                </div>
+                <div class="section">
+                    <div class="flex-between"><label>Rotação (°)</label><span class="val" id="valStructureRotation">0</span></div>
+                    <input id="structureRotation" type="range" min="0" max="360" step="5" value="0" aria-label="Rotação da estrutura" />
+                </div>
+                <div class="hint">Selecione um item e clique na água.</div>
+                <div class="row">
+                    <button id="addPier" class="btn-sec flex-grow">Adicionar Cais</button>
+                    <button id="addBollard" class="btn-sec flex-grow">Adicionar Cabeço</button>
+                </div>
+                <div class="section">
+                    <button id="clearPort" class="btn-danger full-width">Limpar Porto</button>
+                </div>
+            </div>
+         </div>
+    </div>
+    
+    <div id="panel-buoys" class="popup-panel">
+        <div class="panel-header">Controle de Bóias</div>
+        <div class="hint">Clique na água para adicionar a bóia.</div>
+        <div class="row">
+            <button id="addGreenBuoy" class="btn-success">Bóia Verde</button>
+            <button id="addRedBuoy" class="btn-danger">Bóia Encarnada</button>
+        </div>
+        <button id="clearBuoys" class="btn-sec btn-margin-top full-width">Limpar Bóias</button>
+    </div>
+
+    <div id="panel-ship-helm" class="popup-panel" style="display:none;">
+        <div class="panel-header">Governo do Navio</div>
+        <div class="section">
+            <div class="section-title">Telégrafo (RPM Principal)</div>
+            <div class="flex-between"><label>Máquinas (%)</label><span class="val" id="valShipEngine">0</span></div>
+            <input id="shipEngine" type="range" min="-30" max="100" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>[ A Ré ]</span><span>[ Avante ]</span></div>
+        </div>
+        <div class="section">
+            <div class="section-title">Leme (Timão)</div>
+            <div class="flex-between"><label>Ângulo (°)</label><span class="val" id="valShipRudder">0</span></div>
+            <input id="shipRudder" type="range" min="-35" max="35" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>Bombordo</span><span>Boreste</span></div>
+            <button id="btnCenterRudder" class="btn-sec full-width btn-margin-top">Meio Leme (0°)</button>
+        </div>
+        <div class="section">
+            <div class="section-title">Bow Thruster</div>
+            <div class="flex-between"><label>Potência (%)</label><span class="val" id="valShipBowThruster">0</span></div>
+            <input id="shipBowThruster" type="range" min="-100" max="100" step="1" value="0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>Impulso BB</span><span>Impulso BE</span></div>
+            <button id="btnCenterThruster" class="btn-sec full-width btn-margin-top">Parar Thruster (0%)</button>
+        </div>
+        <div class="section">
+            <div class="section-title">Calado (Deslocamento Físico)</div>
+            <div class="flex-between"><label>Profundidade (m)</label><span class="val" id="valShipDraft">5.0</span></div>
+            <input id="shipDraft" type="range" min="5.0" max="15.0" step="0.5" value="5.0" />
+            <div class="row" style="justify-content: space-between; margin-top: 5px; font-size: 11px; font-family: monospace;"><span>Leve (10kt)</span><span>Cheio (60kt)</span></div>
+        </div>
+    </div>
+
+    <div id="right-sidebar">
+        <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD"><i data-lucide="gamepad-2"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-ship-helm" title="Governo do Navio"><i data-lucide="ship"></i></button>
+        <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos"><i data-lucide="calculator"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação"><i data-lucide="anchor"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-maneuvers" title="Manobras"><i data-lucide="map"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-adjustments" title="Ajustes & Status"><i data-lucide="sliders-horizontal"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-views" title="Vistas da Câmera"><i data-lucide="video"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-environment" title="Condições Ambientais"><i data-lucide="wind"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-editor" title="Editor do Cenário"><i data-lucide="hammer"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-buoys" title="Controle de Bóias"><i data-lucide="map-pin"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-levels" title="Níveis de Treinamento"><i data-lucide="graduation-cap"></i></button>
+    </div>
+    
+    <script>
+        lucide.createIcons();
+    </script>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="js/main.js"></script>
+
+<!-- === Launcher AUTÔNOMO do Painel ASD (sem integração) === -->
+<asd-panel-launcher
+  id="asdLauncher"
+  data-src="./asdcontrol.html"
+  data-title="Controles ASD"
+  data-fab="off"         <!-- oculta o botão flutuante; usamos só a sidebar -->
+  data-alias="asdPanel"  <!-- expõe window.asdPanel -->
+></asd-panel-launcher>
+<script type="module" src="js/ui/AsdPanelLauncher.js"></script>
+
+<!-- Nível 1 de Proteção: Anti-DevTools básico -->
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.keyCode === 73)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.keyCode === 74)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.keyCode === 67)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && (e.key === 'U' || e.keyCode === 85)) { e.preventDefault(); return false; }
+    });
+</script>
+
+</body>
+</html>
