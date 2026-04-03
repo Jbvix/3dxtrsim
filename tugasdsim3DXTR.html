@@ -8,9 +8,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Simulador de Manobra de Rebocador ASD (v3.3 - Versão Completa)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ASD TUG SIM - 3D 2026 XTR</title>
+    
+    <script>
+    // AUTO-KILL ROGUE SERVICE WORKERS
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+                console.log('Service Worker removido com sucesso!');
+            }
+        });
+    }
+    </script>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
