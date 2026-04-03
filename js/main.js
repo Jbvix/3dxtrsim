@@ -614,6 +614,10 @@ function loadCargoShip() {
         // Submete cabeços de atracação aos cabos de guincho
         portElements.push({ id: THREE.MathUtils.generateUUID(), type: 'bollard', isShipBollard: true, shipLocation: 'bow', mesh: bowBollard });
         portElements.push({ id: THREE.MathUtils.generateUUID(), type: 'bollard', isShipBollard: true, shipLocation: 'stern', mesh: sternBollard });
+
+        // Atualiza cordas físicas para saberem de onde precisam sair no navio escalado e rotacionado
+        shipMooringState.bow.mooringPoint.copy(bowBollard.position);
+        shipMooringState.stern.mooringPoint.copy(sternBollard.position);
     };
 
     loader.load(modelPath, (gltf) => {
