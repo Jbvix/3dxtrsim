@@ -26,6 +26,7 @@ let windArrow, currentArrow;
 let bowLine, sternLine;
 let bowMooringPointMarker, sternMooringPointMarker;
 let currentView = 'orbit';
+let cameraTargetEntity = 'tug';
 const cameraViews = {
     bow: { pos: new THREE.Vector3(0, 2, 2), target: new THREE.Vector3(0, 1, 10) },
     stern: { pos: new THREE.Vector3(0, 5, -12), target: new THREE.Vector3(0, 1, -5) },
@@ -982,6 +983,18 @@ function setupUIEvents() {
     document.getElementById('viewStarboard').addEventListener('click', () => setCameraView('starboard'));
     document.getElementById('viewOrbit').addEventListener('click', () => setCameraView('orbit'));
 
+    document.getElementById('focusTug')?.addEventListener('click', () => {
+        cameraTargetEntity = 'tug';
+        document.getElementById('focusTug').classList.replace('btn-sec', 'btn-success');
+        document.getElementById('focusShip').classList.replace('btn-success', 'btn-sec');
+    });
+
+    document.getElementById('focusShip')?.addEventListener('click', () => {
+        cameraTargetEntity = 'ship';
+        document.getElementById('focusShip').classList.replace('btn-sec', 'btn-success');
+        document.getElementById('focusTug').classList.replace('btn-success', 'btn-sec');
+    });
+
     const tugColorPicker = document.getElementById('tugColorPicker');
     if (tugColorPicker) {
         tugColorPicker.addEventListener('input', (e) => {
@@ -1781,15 +1794,22 @@ function checkCollisions() {
 }
 
 function updateCamera(dt) {
+    let focusGroup = cgPivot; // Default Tug
+    if (cameraTargetEntity === 'ship' && shipGroup) {
+        focusGroup = shipGroup;
+    }
+
     if (currentView === 'orbit') {
+        const lerpFactor = Math.min(dt * 5.0, 1.0);
+        controls.target.lerp(focusGroup.position, lerpFactor);
         controls.update();
         return;
     }
 
     const view = cameraViews[currentView];
 
-    const desiredPos = view.pos.clone().applyMatrix4(cgPivot.matrixWorld);
-    const desiredTarget = view.target.clone().applyMatrix4(cgPivot.matrixWorld);
+    const desiredPos = view.pos.clone().applyMatrix4(focusGroup.matrixWorld);
+    const desiredTarget = view.target.clone().applyMatrix4(focusGroup.matrixWorld);
 
     const lerpFactor = Math.min(dt * 5.0, 1.0);
     camera.position.lerp(desiredPos, lerpFactor);
