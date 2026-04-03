@@ -3,7 +3,7 @@
 **Boas Práticas de Programação**  
 **Projeto:** Site Estático com Three.js (HTML + CSS + JavaScript Vanilla)
 
-**Autor:** Charlie Bravo  
+**Autor:** Jossian Brito  
 **Versão do guia:** 1.4  
 **Última atualização:** 01/04/2026 22:39
 
@@ -19,7 +19,7 @@ Este documento define os padrões obrigatórios para todo o código deste projet
 ```html
 <!--
   Título: index.html - Cena Principal com Three.js
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 01/04/2026 22:39
   Versão: 1.2
   Descrição: Página principal que carrega o canvas Three.js e interface do usuário
@@ -30,7 +30,7 @@ Este documento define os padrões obrigatórios para todo o código deste projet
 ```css
 /* 
   Título: style.css
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 01/04/2026 22:39
   Versão: 1.1
 */
@@ -40,7 +40,7 @@ Este documento define os padrões obrigatórios para todo o código deste projet
 ```js
 /*
   Título: SceneManager.js
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 01/04/2026 22:39
   Versão: 1.3
   Descrição: Gerencia cena, câmera, renderer, objetos 3D, animações e controles
@@ -123,7 +123,7 @@ Separe o código em blocos claros com comentários visíveis para facilitar corr
 ```js
 /*
   Título: SceneManager.js
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 01/04/2026 22:39
   Versão: 1.3
 */
@@ -221,5 +221,5 @@ Seguir estas boas práticas desde o início reduz drasticamente o tempo e o cust
 
 ---
 
-*Guia mantido por Charlie Bravo*  
+*Guia mantido por Jossian Brito*  
 *Qualquer sugestão de melhoria: abra uma Issue*

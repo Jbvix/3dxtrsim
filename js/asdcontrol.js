@@ -1,6 +1,6 @@
 /*
   Título: Principal JS do Painel ASD 2D
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 02/04/2026 09:25
   Versão: 3.4
 */

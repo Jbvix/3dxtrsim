@@ -1,6 +1,6 @@
 /*
   Título: Principal JS do Simulador 3D
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 01/04/2026 22:45
   Versão: 3.3
   Descrição: Ponto de entrada que inicializa a renderização, loop da física e eventos

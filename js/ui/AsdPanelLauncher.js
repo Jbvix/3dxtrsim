@@ -1,6 +1,6 @@
 /*
   Título: AsdPanelLauncher.js
-  Autor: Charlie Bravo
+  Autor: Jossian Brito
   Data da última modificação: 02/04/2026 09:28
   Versão: 1.0
   Descrição: Custom Element para o painel flutuante ASD e hooks de interface
