@@ -735,6 +735,39 @@ function updateVisuals(totalForce) {
             state.line.visible = true;
         }
     }
+
+    for (const type of ['bow', 'stern']) {
+        const state = shipMooringState[type];
+        if (state.isMoored) {
+            const mooringPointWorld = shipGroup.localToWorld(state.mooringPoint.clone());
+            const bollardPoint = state.bollard;
+            const currentLength = mooringPointWorld.distanceTo(bollardPoint);
+            const isTaut = currentLength > state.restLength;
+
+            let points = [];
+            if (isTaut) {
+                points.push(mooringPointWorld);
+                points.push(bollardPoint);
+                // Navio usa cordas mais exóticas (vermelho vivo) tensionadas
+                state.line.material.color.set(0xff0000);
+            } else {
+                const slack = state.restLength - currentLength;
+                // Deixar a barriga da corda do navio um pouco maior visualmente caso perca a tensão total
+                const sag = Math.min(slack * 0.5, 12);
+
+                const midPoint = new THREE.Vector3().addVectors(mooringPointWorld, bollardPoint).multiplyScalar(0.5);
+                const controlPoint = midPoint.clone().add(new THREE.Vector3(0, -sag, 0));
+
+                const curve = new THREE.QuadraticBezierCurve3(mooringPointWorld, controlPoint, bollardPoint);
+                points = curve.getPoints(20);
+                // Vermelho mais opaco/cinzento quando com folga
+                state.line.material.color.set(0xaa5555);
+            }
+
+            state.line.geometry.setFromPoints(points);
+            state.line.visible = true;
+        }
+    }
 }
 
 function updateCG() {
