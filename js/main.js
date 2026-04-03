@@ -786,16 +786,14 @@ function updateMooringPoints() {
     // =========================================================================
     // CONTROLE DE ALTURA DOS MOORING POINTS (Pinos Ciano/Magenta do Rebocador)
     // =========================================================================
-    // O valor de "Ajuste Fino" provém diretamente do Slider HTML (ui.bowPointY.value).
-    // A inclusão do "tugVisualElevationY" compensa matematicamente o fato de o casco 
-    // ter sido elevado da água pós-purificação, evitando que os pinos afundem no convés.
-    const bowY = parseFloat(ui.bowPointY.value) + tugVisualElevationY;
+    // Assumimos agora a Coordenada Pura Litral exigida pelo usuário como Standard.
+    const bowY = parseFloat(ui.bowPointY.value);
 
     const sternZ = parseFloat(ui.sternPointZ.value);
     const sternX = parseFloat(ui.sternPointX.value);
 
-    // O mesmo princípio de flutuação dinâmica se repete para o pino da Popa
-    const sternY = parseFloat(ui.sternPointY.value) + tugVisualElevationY;
+    // O mesmo princípio absoluto se repete para o pino da Popa
+    const sternY = parseFloat(ui.sternPointY.value);
 
     mooringState.bow.mooringPoint.set(bowX, bowY, bowZ);
     mooringState.stern.mooringPoint.set(sternX, sternY, sternZ);
