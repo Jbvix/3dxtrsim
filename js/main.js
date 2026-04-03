@@ -1815,8 +1815,16 @@ function updateCamera(dt) {
 
     const view = cameraViews[currentView];
 
-    const posLocal = new THREE.Vector3(view.pos.x * scaleH, view.pos.y * scaleV, view.pos.z * scaleH);
-    const targetLocal = new THREE.Vector3(view.target.x * scaleH, view.target.y * scaleV, view.target.z * scaleH);
+    let posLocal = new THREE.Vector3(view.pos.x * scaleH, view.pos.y * scaleV, view.pos.z * scaleH);
+    let targetLocal = new THREE.Vector3(view.target.x * scaleH, view.target.y * scaleV, view.target.z * scaleH);
+
+    // Se o cargueiro foi modelado esticado no eixo X (ao invés do Z padrão do ThreeJS), 
+    // a câmera vai parecer trocada (proa vira estibordo, etc). Então, rodamos os vetores 90 graus!
+    if (cameraTargetEntity === 'ship' && !shipPhysics.isZAxisLonger) {
+        const upVector = new THREE.Vector3(0, 1, 0);
+        posLocal.applyAxisAngle(upVector, Math.PI / 2);
+        targetLocal.applyAxisAngle(upVector, Math.PI / 2);
+    }
 
     const desiredPos = posLocal.applyMatrix4(focusGroup.matrixWorld);
     const desiredTarget = targetLocal.applyMatrix4(focusGroup.matrixWorld);
