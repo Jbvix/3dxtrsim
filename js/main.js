@@ -982,6 +982,40 @@ function setupUIEvents() {
     document.getElementById('viewStarboard').addEventListener('click', () => setCameraView('starboard'));
     document.getElementById('viewOrbit').addEventListener('click', () => setCameraView('orbit'));
 
+    const tugColorPicker = document.getElementById('tugColorPicker');
+    if (tugColorPicker) {
+        tugColorPicker.addEventListener('input', (e) => {
+            const hexColor = e.target.value;
+            const newColor = new THREE.Color(hexColor);
+            
+            if (tug) {
+                tug.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        const matName = (child.material.name || '').toLowerCase();
+                        const meshName = (child.name || '').toLowerCase();
+                        
+                        const isRubber = matName.includes('rubber') || matName.includes('black') || meshName.includes('tire') || meshName.includes('fender');
+                        const isGlass = child.material.transparent || matName.includes('glass') || matName.includes('window') || meshName.includes('window');
+                        const isMetal = matName.includes('metal') || matName.includes('steel') || matName.includes('dark');
+                        const isDeck = matName.includes('wood') || matName.includes('deck');
+
+                        // Pinta as matrizes principais que costumam representar o casco colorido
+                        if (!isRubber && !isGlass && !isMetal && !isDeck) {
+                            // Se for array de materiais fatiados, colore todos
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(m => {
+                                    if(m.color) m.color.copy(newColor);
+                                });
+                            } else if (child.material.color) {
+                                child.material.color.copy(newColor);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     document.querySelectorAll('.popup-panel').forEach(makeDraggable);
 
     ui.breakingLoad.addEventListener('input', (e) => {
