@@ -1,56 +1,62 @@
-# ASD TUG SIM v3.3 - Simulador de Manobra de Rebocador ASD
+# ⚓ CoastalBrasil ASD TUG SIMULATOR (v3.4)
 
-**Autor:** Charlie Bravo  
-**Versão:** 1.0  
-**Última atualização:** 01/04/2026 22:45
+[![Netlify Status](https://api.netlify.com/api/v1/badges/a-badge/deploy-status)](https://3dxtrsim.netlify.app)
+> **Laboratório Hidrodinâmico Digital de Rebocadores Azimuth Stern Drive.**
 
-Bem-vindo ao **ASD TUG SIM**, um simulador dinâmico de hidrodinâmica digital construído para recriar as operações náuticas desafiadoras de um autêntico rebocador *Azimuth Stern Drive* (ASD). O software recria perfeitamente o ambiente seguro e controlado do passadiço virtual, permitindo o engajamento através de manetes e a interação física exata com intempéries (correnteza, vento).
+Este projeto baseia-se em simulador numérico de operações navais severas construído sobre matemática crua e renderização tridimensional no navegador. Ele transcende a lógica clássica de jogos e propõe regras rígidas de atracação portuária via forças vetoriais para fins de treinamento e análise.
 
-## ⚓ Tecnologias Utilizadas
+🌟 **[Acesse o Simulador Ao Vivo Aqui!](https://3dxtrsim.netlify.app)**
 
-A aplicação foi criada sem o uso de game engines e construída 100% sobre linguagens da Web:
-- **HTML5 & CSS3 Vanilla**
-- **JavaScript Moderno (ESModules)**
-- **Three.js** (Para rendering 3D estrito)
-- **Tailwind CSS** (Exclusivo da Home Page para apresentação)
+---
 
-## 🏗️ Estrutura e Práticas do Código
+## 🛠️ Tecnologias de Base
 
-O repositório é rigorosamente mantido sob o escopo do nosso [Guia Oficial de Boas Práticas](BOAS-PRATICAS.md), cujo objetivo é promover manutenibilidade:
-1. **Escopo Semântico de HTML**: Interface isolada de blocos lógicos.
-2. **Organização de Código em Agrupamentos Lógicos**: Uso exaustivo de divisores demarcados e comentários explanatórios para segmentar setups, event handlers, loops e imports.
-3. **Padrão de Endentação**: Estritamente 2 espaços sem alocações `tab`.
+A arquitetura do CoastalBrasil ASD Simulator elimina dependências de "Caixas Pretas" fechadas de mercado (Unity/Unreal). O motor processa gráficos e cálculos complexos de molas inteiramente sob os ombros da Web Pura:
 
-## ⚙️ Como Executar o Simulador Localmente
+*   **HTML5 / Vanilla Javascript (ES6+)**
+*   **Three.js** (WebGL nativo para processamento PBR massivo nas Placas de Vídeo).
+*   **TailwindCSS** (Estilo paramétrico fluído dos painéis da Landing Page).
+*   **Netlify Edge Hosting** (Ambiente Seguro com Proteções Globais e Anti-Hotlinking no Nível 2).
 
-Devido as políticas rígidas de CORS de navegadores modernos para ES Modules (usado no módulo do Three.js), este projeto deve ser executado primariamente atravé de um servidor local.
+### 💡 Funcionalidades Principais (Release 3.4)
 
-### Usando Python (Comum em vários SOs)
-```bash
-python -m http.server 8080
-```
+*   **Twin-Simulation Independente:** Domínio total sobre os manetes de um poderoso rebocador ASD e comutação instantânea para o passadiço independente de um **Navio Cargueiro de +60.000 Toneladas**.
+*   **Atracação e Choque Analítico (Hooke's Law):** Cabos vetoriais reagem com rigor acadêmico limitando Força de Ruptura (*Breaking Load em Tensões T/kN*), Rigidez e Amortecimento. E colisões detectadas via caixas AABB entre píeres, barcos e boias navais que simulam perdas de energia natural.
+*   **Integração Atmosférica Paramétrica:** Ventos em cruzamento vetorial puro de até 50 Nós e Correntes Hidrodinâmicas tridimensionais atuando na força de atrito e *yaw* (guinada rotacional) do navio sob peso pesado.
+*   **Matrizes Visuais:** Órbita tridimensional de câmeras inteligentes que se auto-reconfiguram usando matrizes trigonométricas dependendo das escalas entre rebocador ($15m$) ou supercargueiros ($~200m$). E repintura total através de heurísticas de malhas PBR.
 
-### Usando NPM/Node.js
-```bash
-npx serve .
-```
+---
 
-E em seguida, navegue pelo seu navegador no endereço: `http://localhost:8080/index.html`
+## 🏗️ Como Executar Localmente (Desenvolvimento)
 
-## 🕹️ Funcionalidades e Níveis de Treinamento
+Para rodar este software isolado das travas do CORS via módulos ES nativos:
 
-O painel de Passadiço Virtual lhe oferece:
-- Controle Azimutal com resposta mecânica fiel de embreagem e atrito.
-- Cabos de amarração mensurando ruptura elástica (em breaking loads/t).
-- Ajustes finos de inércia do casco, e controle do clima.
+1.  Clone este repositório `git clone https://github.com/Jbvix/3dxtrsim.git`
+2.  Levante um micro-servidor. Recomendamos uso do Python:
+    ```bash
+    python -m http.server 8080
+    ```
+    Ou via Node.js:
+    ```bash
+    npx serve .
+    ```
+3.  Abra seu navegador Chrome ou Edge em: `http://localhost:8080/index.html`
 
-Você possui **4 níveis de treinamento** para calibrar a sua intuição marítima:
-1. Nível Básico (Sem clima)
-2. Atracação entre Balizamento IALA de Bóias Verticais/Encarnadas
-3. Navegação sob Vento denso Perpendicular
-4. Atracação em forte Corrente Marítima
+---
 
-## 🤝 Dificuldades e Manutenção
+## 📚 Documentação Adicional
 
-Reporte problemas no repositório do Github ou contate [jossiancosta@gmail.com](mailto:jossiancosta@gmail.com). Todo código entregue segue o rigor e a disciplina da manutenção evolutiva descrita no **BOAS-PRATICAS.md**.  
-*Qualquer sugestão de melhoria: abra uma Issue.*
+Este código obedece fielmente aos padrões rígidos do nosso projeto. É de leitura **OBRIGATÓRIA** para futuros contribuidores:
+*   [📕 Diretrizes de Arquitetura e Engenharia de Manutenção (Boas-Práticas)](BOAS-PRATICAS.md)
+*   [📘 Glossário de Programação e Componentes Funcionais (Teoria e APIs do Motor)](GLOSSARIO_TECNICO.md)
+
+---
+
+## 📞 Contato Acadêmico e Comercial
+Qualquer anomalia no comportamento do rebocador e sugestão de melhorias:
+
+*   **O Projeto Inicial:** _ASDTUGSIM Lab Engine © 2026_ criado por **Jossian Brito**.
+*   **WhatsApp Comercial:** [+55 (85) 99773-7230](https://wa.me/5585997737230)
+*   **Correio Eletrônico:** [jossiancosta@gmail.com](mailto:jossiancosta@gmail.com)
+
+> _"A ciência dos oceanos transformada em precisão digital. A ponte entre teorias náuticas e passadiços virtuais."_
