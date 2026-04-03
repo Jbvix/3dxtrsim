@@ -12,8 +12,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Simulador de Manobra de Rebocador ASD (v3.3 - Versão Completa)</title>
 <link rel="stylesheet" href="css/style.css">
-
-  
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
 <body>
 <div id="app">
     <div id="top-telemetry-bar">
@@ -385,18 +385,22 @@
     </div>
 
     <div id="right-sidebar">
-        <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD">🕹️</button>
-        <button class="sidebar-btn" data-panel-id="panel-ship-helm" title="Governo do Navio">🚢</button>
-        <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos">🧮</button>
-        <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação">⚓</button>
-        <button class="sidebar-btn" data-panel-id="panel-maneuvers" title="Manobras">🗺️</button>
-        <button class="sidebar-btn" data-panel-id="panel-adjustments" title="Ajustes & Status">📊</button>
-        <button class="sidebar-btn" data-panel-id="panel-views" title="Vistas da Câmera">📷</button>
-        <button class="sidebar-btn" data-panel-id="panel-environment" title="Condições Ambientais">💨</button>
-        <button class="sidebar-btn" data-panel-id="panel-editor" title="Editor do Cenário">🏗️</button>
-        <button class="sidebar-btn" data-panel-id="panel-buoys" title="Controle de Bóias">📍</button>
-        <button class="sidebar-btn" data-panel-id="panel-levels" title="Níveis de Treinamento">🎓</button>
+        <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD"><i data-lucide="gamepad-2"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-ship-helm" title="Governo do Navio"><i data-lucide="ship"></i></button>
+        <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos"><i data-lucide="calculator"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação"><i data-lucide="anchor"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-maneuvers" title="Manobras"><i data-lucide="map"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-adjustments" title="Ajustes & Status"><i data-lucide="sliders-horizontal"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-views" title="Vistas da Câmera"><i data-lucide="video"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-environment" title="Condições Ambientais"><i data-lucide="wind"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-editor" title="Editor do Cenário"><i data-lucide="hammer"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-buoys" title="Controle de Bóias"><i data-lucide="map-pin"></i></button>
+        <button class="sidebar-btn" data-panel-id="panel-levels" title="Níveis de Treinamento"><i data-lucide="graduation-cap"></i></button>
     </div>
+    
+    <script>
+        lucide.createIcons();
+    </script>
 </div>
 
 <script type="importmap">
