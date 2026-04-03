@@ -122,6 +122,22 @@
 
         <!-- ABA: REBOCADOR -->
         <div id="tab-tug" class="tab-content active">
+            <!-- Configurações Globais do Cabo do Rebocador -->
+            <div class="winch-group" style="padding: 10px; margin-bottom: 15px; border-bottom: 1px solid #333;">
+                <div class="row">
+                    <div class="flex-grow">
+                        <div class="flex-between"><label>Carga de Ruptura (t)</label><span class="val" id="valBreakingLoad">102.0</span></div>
+                        <input id="breakingLoad" type="range" min="10" max="250" step="1" value="102" class="full-width"/>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 8px;">
+                    <div class="flex-grow">
+                        <div class="flex-between"><label>Rigidez do Cabo</label><span class="val" id="valStiffness">40.0</span></div>
+                        <input id="stiffness" type="range" min="5" max="200" step="5" value="40" class="full-width"/>
+                    </div>
+                </div>
+            </div>
+
             <!-- Sub-Tabs: Proa e Popa -->
             <div class="sub-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid #444;">
                 <button class="sub-tab-btn active" data-subtab="subtab-tug-bow" onclick="switchSubTab('subtab-tug-bow', 'tab-tug')" style="flex:1; background:none; color:#0ea5e9; border:none; padding:8px; cursor:pointer; font-size:12px; font-weight:bold; border-bottom: 2px solid #0ea5e9;">PROA</button>
