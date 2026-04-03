@@ -802,10 +802,10 @@ function updateMooringPoints() {
 
     ui.valBowPointZ.textContent = bowZ.toFixed(1);
     ui.valBowPointX.textContent = bowX.toFixed(1);
-    ui.valBowPointY.textContent = bowY.toFixed(1);
+    ui.valBowPointY.textContent = parseFloat(ui.bowPointY.value).toFixed(1);
     ui.valSternPointZ.textContent = sternZ.toFixed(1);
     ui.valSternPointX.textContent = sternX.toFixed(1);
-    ui.valSternPointY.textContent = sternY.toFixed(1);
+    ui.valSternPointY.textContent = parseFloat(ui.sternPointY.value).toFixed(1);
 
     if (bowMooringPointMarker && sternMooringPointMarker) {
         bowMooringPointMarker.position.set(bowX, bowY + 0.2, bowZ);
