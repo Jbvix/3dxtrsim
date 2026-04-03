@@ -1166,7 +1166,7 @@ function toggleShipPierMooring(type) {
             }
         });
 
-        const SHIP_MOORING_THRESHOLD = 35; // Distância maior que o rebocador para pescar a corda no cais
+        const SHIP_MOORING_THRESHOLD = 50; // Distância maior que o rebocador para pescar a corda no cais
 
         if (closestBollard && minDistance <= SHIP_MOORING_THRESHOLD) {
             state.isMoored = true;
@@ -1182,7 +1182,7 @@ function toggleShipPierMooring(type) {
             button.classList.remove('btn-sec');
             button.classList.add('btn-success');
         } else {
-            alert('Nenhum cabeço do cais próximo o suficiente para atracar o navio (Máx: 35m). Aproxime mais da estrutura!');
+            alert('Nenhum cabeço do cais próximo o suficiente para atracar o navio (Máx: 50m). Aproxime mais da estrutura!');
         }
     }
 }
@@ -1805,7 +1805,7 @@ function updateMooringButtonsState() {
 
     // Navio Cargueiro ao Cais (Habilitar Botões)
     if (shipGroup) {
-        const SHIP_MOORING_THRESHOLD = 35;
+        const SHIP_MOORING_THRESHOLD = 50;
         const pierBollards = portElements.filter(el => el.type === 'bollard' && !el.isShipBollard);
 
         if (!shipMooringState.bow.isMoored) {
