@@ -403,5 +403,17 @@
 ></asd-panel-launcher>
 <script type="module" src="js/ui/AsdPanelLauncher.js"></script>
 
+<!-- Nível 1 de Proteção: Anti-DevTools básico -->
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.keyCode === 73)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.keyCode === 74)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.keyCode === 67)) { e.preventDefault(); return false; }
+        if (e.ctrlKey && (e.key === 'U' || e.keyCode === 85)) { e.preventDefault(); return false; }
+    });
+</script>
+
 </body>
 </html>
