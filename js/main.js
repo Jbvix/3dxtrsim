@@ -1667,6 +1667,30 @@ function checkCollisions() {
                 }
             }
         }
+
+        // Colisao do Navio com Cais (Caisson)
+        if (shipGroup && shipState.boundingBox.intersectsBox(pierBox)) {
+            const overlapShip = new THREE.Vector3();
+            const shipCenter = shipState.boundingBox.getCenter(new THREE.Vector3());
+            const pierCenter = pierBox.getCenter(new THREE.Vector3());
+            overlapShip.subVectors(shipCenter, pierCenter);
+
+            const shipSize = shipState.boundingBox.getSize(new THREE.Vector3());
+            const pierSizeLocal = pierBox.getSize(new THREE.Vector3());
+
+            const overlapXShip = (shipSize.x / 2) + (pierSizeLocal.x / 2) - Math.abs(overlapShip.x);
+            const overlapZShip = (shipSize.z / 2) + (pierSizeLocal.z / 2) - Math.abs(overlapShip.z);
+
+            if (overlapXShip > 0 && overlapZShip > 0) {
+                if (overlapXShip < overlapZShip) {
+                    shipState.position.x += overlapXShip * Math.sign(overlapShip.x);
+                    shipState.velocity.x *= -0.2; // Alta absorção de choque por causa do peso
+                } else {
+                    shipState.position.z += overlapZShip * Math.sign(overlapShip.z);
+                    shipState.velocity.z *= -0.2;
+                }
+            }
+        }
     });
 
     buoys.forEach(buoy => {
@@ -1777,6 +1801,42 @@ function updateMooringButtonsState() {
             }
         }
         ui.moorStern.disabled = !isNearBollard;
+    }
+
+    // Navio Cargueiro ao Cais (Habilitar Botões)
+    if (shipGroup) {
+        const SHIP_MOORING_THRESHOLD = 35;
+        const pierBollards = portElements.filter(el => el.type === 'bollard' && !el.isShipBollard);
+
+        if (!shipMooringState.bow.isMoored) {
+            let isNearBollard = false;
+            if (pierBollards.length > 0) {
+                const mooringPointWorld = shipGroup.localToWorld(shipMooringState.bow.mooringPoint.clone());
+                for (const bollardEl of pierBollards) {
+                    const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                    if (mooringPointWorld.distanceTo(worldBollardPos) <= SHIP_MOORING_THRESHOLD) {
+                        isNearBollard = true;
+                        break;
+                    }
+                }
+            }
+            ui.moorShipBow.disabled = !isNearBollard;
+        }
+
+        if (!shipMooringState.stern.isMoored) {
+            let isNearBollard = false;
+            if (pierBollards.length > 0) {
+                const mooringPointWorld = shipGroup.localToWorld(shipMooringState.stern.mooringPoint.clone());
+                for (const bollardEl of pierBollards) {
+                    const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+                    if (mooringPointWorld.distanceTo(worldBollardPos) <= SHIP_MOORING_THRESHOLD) {
+                        isNearBollard = true;
+                        break;
+                    }
+                }
+            }
+            ui.moorShipStern.disabled = !isNearBollard;
+        }
     }
 }
 
