@@ -1795,8 +1795,15 @@ function checkCollisions() {
 
 function updateCamera(dt) {
     let focusGroup = cgPivot; // Default Tug
+    let scaleH = 1.0;
+    let scaleV = 1.0;
+
     if (cameraTargetEntity === 'ship' && shipGroup) {
         focusGroup = shipGroup;
+        // Escala os offsets criados para o rebocador minúsculo para se adequarem
+        // ao escopo gigantesco do casco do cargueiro (Puxando a câmera longe)
+        scaleH = 12.0;
+        scaleV = 6.0;
     }
 
     if (currentView === 'orbit') {
@@ -1808,8 +1815,11 @@ function updateCamera(dt) {
 
     const view = cameraViews[currentView];
 
-    const desiredPos = view.pos.clone().applyMatrix4(focusGroup.matrixWorld);
-    const desiredTarget = view.target.clone().applyMatrix4(focusGroup.matrixWorld);
+    const posLocal = new THREE.Vector3(view.pos.x * scaleH, view.pos.y * scaleV, view.pos.z * scaleH);
+    const targetLocal = new THREE.Vector3(view.target.x * scaleH, view.target.y * scaleV, view.target.z * scaleH);
+
+    const desiredPos = posLocal.applyMatrix4(focusGroup.matrixWorld);
+    const desiredTarget = targetLocal.applyMatrix4(focusGroup.matrixWorld);
 
     const lerpFactor = Math.min(dt * 5.0, 1.0);
     camera.position.lerp(desiredPos, lerpFactor);
