@@ -1124,23 +1124,16 @@ function setupUIEvents() {
 
     window.addEventListener('message', handleAsdControlMessage);
 
-    // --- Persistência Local dos Ajustes (CG, Y e Pontos de Atracação) ---
-    const saveAdjustmentsBtn = document.getElementById('saveAdjustmentsBtn');
-    if (saveAdjustmentsBtn) {
-        saveAdjustmentsBtn.addEventListener('click', () => {
-            const config = {
-                cgZ: ui.cgZ.value, cgX: ui.cgX.value, elevationY: ui.elevationY.value,
-                bowPointZ: ui.bowPointZ.value, bowPointX: ui.bowPointX.value, bowPointY: ui.bowPointY.value,
-                sternPointZ: ui.sternPointZ.value, sternPointX: ui.sternPointX.value, sternPointY: ui.sternPointY.value
-            };
-            localStorage.setItem('tugSimAdjustments', JSON.stringify(config));
-            const oldTxt = saveAdjustmentsBtn.textContent;
-            saveAdjustmentsBtn.textContent = '✅ Salvo Localmente com Sucesso!';
-            saveAdjustmentsBtn.classList.replace('btn-success', 'btn-primary'); // Feedback temporário
-            setTimeout(() => {
-                saveAdjustmentsBtn.textContent = oldTxt;
-                saveAdjustmentsBtn.classList.replace('btn-primary', 'btn-success');
-            }, 2000);
+    // --- Restauração dos Ajustes para os Padrões Originais ---
+    const resetAdjustmentsBtn = document.getElementById('resetAdjustmentsBtn');
+    if (resetAdjustmentsBtn) {
+        resetAdjustmentsBtn.addEventListener('click', () => {
+            localStorage.removeItem('tugSimColor');
+            localStorage.removeItem('tugSimAdjustments');
+            const oldTxt = resetAdjustmentsBtn.textContent;
+            resetAdjustmentsBtn.textContent = '🔄 Restaurando...';
+            resetAdjustmentsBtn.classList.replace('btn-warning', 'btn-primary');
+            setTimeout(() => { location.reload(); }, 600);
         });
     }
 
