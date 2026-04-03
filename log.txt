@@ -1,0 +1,20 @@
+f12fb6a - feat(ui): implementa painel em abas e automacao do guincho tracionario
+978165d - fix(ui): remove transicao css do painel asd para eliminar input lag no arraste
+a237e2c - Revert "feat(ui): refatoracao do painel asd para 2 colunas liquidas responsivas sem strings redundantes e touch blindado"
+7dab896 - feat(ui): refatoracao do painel asd para 2 colunas liquidas responsivas sem strings redundantes e touch blindado
+55875ad - feat(ui): injeta tema transulcido glassmorph e controles luminosos de slider com icones lucide vector
+33710b7 - feat(ui): implementa painel em abas menores e resolve bug touch-action de tablet
+b6298b1 - fix(physics): desliga compensador de elevacao global dos pinos de atracacao para assumirem coordenadas reais literais
+9e286fa - fix(ui): corrige impressao textual do html para o eixo Y n├úo somar com offset magnetico
+b663ba8 - docs: atualiza badge principal para o status UUID oficial do Netlify Hub
+a84efca - fix(ui): reverte constante Y da popa para -0.3 conforme nova diretriz do usuario
+26f9fef - feat(ui): converte botao de salvar config para botao de restaurar padroes, fixando o y popa para -0.4
+e46ee6f - fix(ui): converte eventos de arraste dos paineis html para pointerEvents provendo suporte universal a touchscreens
+bf7bcac - feat(ui): padroniza constantes de vetores de atracacao originais de proa e popa com base na modelagem
+919c326 - chore: atualiza todas assinaturas de autor e licenca de charlie bravo para jossian brito
+7b324e2 - docs: adiciona bloco de atribuicao legal de creditos de autoria e licenciamento das malhas 3d
+f4da166 - fix(security): ajusta cabe├ºalho X-Frame-Options para SAMEORIGIN e remove sandboxing redundante do painel ASD
+5d91c06 - docs: reescreve readme abordando todos os avancos fisicos da v3.4 e lincando modulos auxiliares
+e251405 - docs: cria arquido de glossario tecnico para listagem teorica e de apis utilizadas
+f6244c5 - feat(ui): implanta contador publico de visitas na index
+35a5584 - chore(security): adiciona headers anti-framing e scripts JS para bloqueio do F12 e botao direito em ambiente de producao
