@@ -145,6 +145,36 @@
         </div>
         
         <div class="section">
+             <div class="section-title">Navio Cargueiro ao Cais</div>
+             <div class="row" style="margin-bottom: 8px;">
+                 <button id="moorShipBow" class="btn-sec full-width" disabled>Ao Cais (Proa)</button>
+                 <button id="moorShipStern" class="btn-sec full-width" disabled>Ao Cais (Popa)</button>
+             </div>
+             <div id="shipBowWinchControl" class="winch-control">
+                <div class="flex-between"><label>Cabo de Proa (m)</label><span class="val" id="valShipBowLineLength">0</span></div>
+                <input id="shipBowLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                <div id="shipBowTensionGauge" class="tension-gauge">
+                    <div class="flex-between">
+                        <label>Tensão (t)</label>
+                        <span class="val" id="valShipBowTension">0.0</span>
+                    </div>
+                    <div class="tension-bar-container"><div id="shipBowTensionBar" class="tension-bar"></div></div>
+                </div>
+            </div>
+            <div id="shipSternWinchControl" class="winch-control">
+                <div class="flex-between"><label>Cabo de Popa (m)</label><span class="val" id="valShipSternLineLength">0</span></div>
+                <input id="shipSternLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                <div id="shipSternTensionGauge" class="tension-gauge">
+                    <div class="flex-between">
+                        <label>Tensão (t)</label>
+                        <span class="val" id="valShipSternTension">0.0</span>
+                    </div>
+                    <div class="tension-bar-container"><div id="shipSternTensionBar" class="tension-bar"></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
              <div class="section-title">Características do Cabo</div>
              <div>
                 <div class="flex-between"><label>Carga de Ruptura (t)</label><span class="val" id="valBreakingLoad">102</span></div>

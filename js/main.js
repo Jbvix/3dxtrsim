@@ -50,6 +50,11 @@ const mooringState = {
     bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, 6), restLength: 0, targetRestLength: 0 },
     stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, -6), restLength: 0, targetRestLength: 0 }
 };
+
+const shipMooringState = {
+    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 10, 60), restLength: 0, targetRestLength: 0 },
+    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 10, -60), restLength: 0, targetRestLength: 0 }
+};
 const MOORING_DISTANCE_THRESHOLD = 8;
 const WINCH_SPEED = 2.0; // m/s
 
@@ -164,6 +169,20 @@ const ui = {
     valBowTension: document.getElementById('valBowTension'),
     sternTensionBar: document.getElementById('sternTensionBar'),
     valSternTension: document.getElementById('valSternTension'),
+    
+    // UI de Atracacao do Navio
+    moorShipBow: document.getElementById('moorShipBow'),
+    moorShipStern: document.getElementById('moorShipStern'),
+    shipBowWinchControl: document.getElementById('shipBowWinchControl'),
+    shipSternWinchControl: document.getElementById('shipSternWinchControl'),
+    shipBowLineLength: document.getElementById('shipBowLineLength'),
+    shipSternLineLength: document.getElementById('shipSternLineLength'),
+    valShipBowLineLength: document.getElementById('valShipBowLineLength'),
+    valShipSternLineLength: document.getElementById('valShipSternLineLength'),
+    valShipBowTension: document.getElementById('valShipBowTension'),
+    shipBowTensionBar: document.getElementById('shipBowTensionBar'),
+    valShipSternTension: document.getElementById('valShipSternTension'),
+    shipSternTensionBar: document.getElementById('shipSternTensionBar'),
     bowPointZ: document.getElementById('bowPointZ'),
     valBowPointZ: document.getElementById('valBowPointZ'),
     bowPointX: document.getElementById('bowPointX'),
@@ -629,6 +648,14 @@ function createVisuals() {
     mooringState.bow.line = bowLine;
     mooringState.stern.line = sternLine;
 
+    // Linhas do Cargueiro
+    const shipBowLine = new THREE.Line(lineGeo.clone(), lineMat.clone());
+    const shipSternLine = new THREE.Line(lineGeo.clone(), lineMat.clone());
+    shipBowLine.visible = shipSternLine.visible = false;
+    scene.add(shipBowLine, shipSternLine);
+    shipMooringState.bow.line = shipBowLine;
+    shipMooringState.stern.line = shipSternLine;
+
     const pointGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.4, 12);
     const bowPointMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
     const sternPointMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
@@ -881,6 +908,9 @@ function setupUIEvents() {
 
     ui.moorBow.addEventListener('click', () => toggleMooring('bow'));
     ui.moorStern.addEventListener('click', () => toggleMooring('stern'));
+    
+    ui.moorShipBow.addEventListener('click', () => toggleShipPierMooring('bow'));
+    ui.moorShipStern.addEventListener('click', () => toggleShipPierMooring('stern'));
 
     document.getElementById('moorTugBowToShipBow')?.addEventListener('click', () => toggleShipMooring('bow', 'bow'));
     document.getElementById('moorTugBowToShipStern')?.addEventListener('click', () => toggleShipMooring('bow', 'stern'));
@@ -895,6 +925,17 @@ function setupUIEvents() {
     ui.sternLineLength.addEventListener('input', (e) => {
         if (mooringState.stern.isMoored) {
             mooringState.stern.targetRestLength = parseFloat(e.target.value);
+        }
+    });
+
+    ui.shipBowLineLength.addEventListener('input', (e) => {
+        if (shipMooringState.bow.isMoored) {
+            shipMooringState.bow.targetRestLength = parseFloat(e.target.value);
+        }
+    });
+    ui.shipSternLineLength.addEventListener('input', (e) => {
+        if (shipMooringState.stern.isMoored) {
+            shipMooringState.stern.targetRestLength = parseFloat(e.target.value);
         }
     });
 
@@ -1085,6 +1126,63 @@ function toggleMooring(type) {
             button.classList.add('btn-success');
         } else {
             alert('Nenhum cabeço próximo o suficiente para atracar.');
+        }
+    }
+}
+
+function toggleShipPierMooring(type) {
+    const state = shipMooringState[type];
+    const button = ui[type === 'bow' ? 'moorShipBow' : 'moorShipStern'];
+    const winchControl = ui[type === 'bow' ? 'shipBowWinchControl' : 'shipSternWinchControl'];
+    const winchSlider = ui[type === 'bow' ? 'shipBowLineLength' : 'shipSternLineLength'];
+    const winchValue = ui[type === 'bow' ? 'valShipBowLineLength' : 'valShipSternLineLength'];
+    const tensionBar = ui[type === 'bow' ? 'shipBowTensionBar' : 'shipSternTensionBar'];
+    const tensionVal = ui[type === 'bow' ? 'valShipBowTension' : 'valShipSternTension'];
+
+    if (state.isMoored) {
+        state.isMoored = false;
+        state.bollard = null;
+        state.targetBollardEl = null;
+        state.line.visible = false;
+        winchControl.style.display = 'none';
+        button.textContent = `Ao Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-sec');
+        tensionVal.textContent = '0.0';
+        tensionBar.style.width = '0%';
+    } else {
+        const mooringPointWorld = shipGroup.localToWorld(state.mooringPoint.clone());
+        let closestBollard = null;
+        let closestBollardEl = null;
+        let minDistance = Infinity;
+
+        portElements.filter(el => el.type === 'bollard' && !el.isShipBollard).forEach(bollardEl => {
+            const worldBollardPos = bollardEl.mesh.getWorldPosition(new THREE.Vector3());
+            const distance = mooringPointWorld.distanceTo(worldBollardPos);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestBollard = worldBollardPos.clone();
+                closestBollardEl = bollardEl;
+            }
+        });
+
+        const SHIP_MOORING_THRESHOLD = 35; // Distância maior que o rebocador para pescar a corda no cais
+
+        if (closestBollard && minDistance <= SHIP_MOORING_THRESHOLD) {
+            state.isMoored = true;
+            state.bollard = closestBollard;
+            state.targetBollardEl = closestBollardEl;
+            state.line.visible = true;
+            state.restLength = minDistance;
+            state.targetRestLength = minDistance;
+            winchSlider.value = minDistance;
+            winchValue.textContent = minDistance.toFixed(1);
+            winchControl.style.display = 'block';
+            button.textContent = `Largar Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
+            button.classList.remove('btn-sec');
+            button.classList.add('btn-success');
+        } else {
+            alert('Nenhum cabeço do cais próximo o suficiente para atracar o navio (Máx: 35m). Aproxime mais da estrutura!');
         }
     }
 }
@@ -1391,8 +1489,8 @@ function updatePhysics(dt) {
     const bowThrustAmt = (shipControls.bowThruster / 100.0); // + (BE) ou - (BB)
     const bowThrusterForce = shipRightDir.clone().multiplyScalar(bowThrustAmt * 50000);
     totalShipForce.add(bowThrusterForce);
-    // Força à BORESTE na Proa cria Torque pra BORESTE (+)
-    totalShipTorque += bowThrustAmt * 50000 * 60;
+    // Força à BORESTE na Proa cria Torque pra BORESTE (Negativo no eixo Y)
+    totalShipTorque -= bowThrustAmt * 50000 * 60;
 
     // 3. Sistema Dinâmico do Leme (Giro gera Deriva)
     const forwardSpeed = Math.abs(shipState.velocity.dot(shipForwardDir));
@@ -1402,14 +1500,81 @@ function updatePhysics(dt) {
     // Leme de slider é -35 a 35. (+) = Boreste, (-) = Bombordo.
     const rudderAngleRad = THREE.MathUtils.degToRad(shipControls.rudder);
 
-    // Torque do Leme: Leme à Direita (+) curva o navio pra Direita (+)
-    const rudderTorque = rudderAngleRad * effectiveWaterFlow * 400000;
+    // Torque do Leme: Leme à Direita (+) curva o navio pra Direita (-)
+    const rudderTorque = -rudderAngleRad * effectiveWaterFlow * 400000;
     totalShipTorque += rudderTorque;
 
-    // Força Lateral da Popa: Para virar à direita (+), a água empurra a popa para a Esquerda / Bombordo (-shipRightDir)
-    // Portanto derivamos a força invertendo o sinal algébrico!
-    const rudderLateralForce = shipRightDir.clone().multiplyScalar(- (rudderTorque / 60.0));
+    // Força Lateral da Popa: Para virar à direita (rudderTorque negativo), a água empurra a popa para a Esquerda (-shipRightDir)
+    // Como rudderTorque já é negativo, somá-lo gera o vetor correto para bombordo
+    const rudderLateralForce = shipRightDir.clone().multiplyScalar(rudderTorque / 60.0);
     totalShipForce.add(rudderLateralForce);
+
+    // --- Lógica de Tensão do Cabo do Navio ao Cais ---
+    for (const type of ['bow', 'stern']) {
+        const state = shipMooringState[type];
+        const tensionBar = ui[type === 'bow' ? 'shipBowTensionBar' : 'shipSternTensionBar'];
+        const tensionVal = ui[type === 'bow' ? 'valShipBowTension' : 'valShipSternTension'];
+        const lineLengthVal = ui[type === 'bow' ? 'valShipBowLineLength' : 'valShipSternLineLength'];
+
+        if (state.isMoored) {
+            if (state.targetBollardEl) {
+                state.bollard = state.targetBollardEl.mesh.getWorldPosition(new THREE.Vector3());
+            }
+
+            const lengthDifference = state.targetRestLength - state.restLength;
+            if (Math.abs(lengthDifference) > 0.01) {
+                const adjustment = Math.sign(lengthDifference) * WINCH_SPEED * dt;
+                state.restLength += (Math.abs(adjustment) > Math.abs(lengthDifference)) ? lengthDifference : adjustment;
+                lineLengthVal.textContent = state.restLength.toFixed(1);
+            }
+
+            const mooringPointWorld = shipGroup.localToWorld(state.mooringPoint.clone());
+            const lineVector = new THREE.Vector3().subVectors(state.bollard, mooringPointWorld);
+            const currentLength = lineVector.length();
+            const stretch = currentLength - state.restLength;
+
+            if (stretch > 0) {
+                const forceDirection = lineVector.clone().normalize();
+                
+                // O navio é absurdamente pesado. Corda de cais deve ser mais resistente que a do rebocador.
+                const shipLineStiffness = physics.lineStiffness * 50; 
+                const shipLineDamping = physics.lineDamping * 50;
+                const shipBreakingLoad = physics.lineBreakingLoad * 10;
+
+                const springForceMagnitude = stretch * shipLineStiffness;
+                const closingSpeed = shipState.velocity.dot(forceDirection);
+                const dampingForceMagnitude = closingSpeed * shipLineDamping;
+
+                let totalLineForce = springForceMagnitude - dampingForceMagnitude;
+                if (totalLineForce < 0) totalLineForce = 0;
+
+                const tensionTons = totalLineForce / 9807;
+                const tensionPercent = Math.min((totalLineForce / shipBreakingLoad) * 100, 100);
+                
+                tensionVal.textContent = tensionTons.toFixed(1);
+                tensionBar.style.width = `${tensionPercent}%`;
+                if (tensionPercent > 85) tensionBar.style.backgroundColor = '#dc3545';
+                else if (tensionPercent > 50) tensionBar.style.backgroundColor = '#ffc107';
+                else tensionBar.style.backgroundColor = '#28a745';
+
+                if (totalLineForce > shipBreakingLoad) {
+                    toggleShipPierMooring(type);
+                    continue;
+                }
+
+                const lineForceVectorShip = forceDirection.clone().multiplyScalar(totalLineForce);
+                totalShipForce.add(lineForceVectorShip);
+
+                const rShip = new THREE.Vector3().subVectors(mooringPointWorld, shipState.position);
+                totalShipTorque += rShip.z * lineForceVectorShip.x - rShip.x * lineForceVectorShip.z;
+
+            } else {
+                tensionVal.textContent = '0.0';
+                tensionBar.style.width = '0%';
+                tensionBar.style.backgroundColor = '#28a745';
+            }
+        }
+    }
 
     debugData.shipForce = totalShipForce.length();
     debugData.shipTorque = totalShipTorque;
