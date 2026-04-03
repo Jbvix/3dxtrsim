@@ -33,7 +33,7 @@
   #panel-environment { top: 280px; left: 770px; width: 300px; display: none; }
   #panel-editor { top: 550px; left: 770px; width: 300px; display: none; }
   #panel-buoys { top: 420px; left: 450px; width: 300px; display: none; }
-  .winch-control { display: none; margin-top: 10px; }
+  .winch-control { margin-top: 10px; }
   .tension-gauge { margin-top: 5px; }
   .section-title { text-align: center; font-weight: 500; font-size: 14px; margin-bottom: 10px; }
   .section-subtitle { text-align: center; font-size: 12px; opacity: 0.7; padding-top: 10px; border-top: 1px solid #333; margin-top: 5px; }
@@ -206,6 +206,23 @@
   #maneuver-list span { flex-grow: 1; }
   #maneuver-list button { font-size: 10px; padding: 2px 6px; margin-left: 4px; }
   .btn-margin-top { margin-top: 5px; }
+
+  /* == Industrial Winch Controls == */
+  .winch-group { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .winch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .winch-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); color: #fff; font-weight: bold; cursor: pointer; transition: all 0.1s; user-select: none; touch-action: manipulation; line-height: 1.2; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+  .winch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  
+  .winch-btn.clutch { grid-column: 1 / -1; height: 54px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-width: 2px; }
+  .winch-btn.clutch.off { background: #dc3545; border-color: #ff4d4d; box-shadow: 0 0 10px rgba(220,53,69,0.3); }
+  .winch-btn.clutch.on { background: #198754; border-color: #28a745; box-shadow: 0 0 15px rgba(25,135,84,0.5); }
+  
+  .winch-btn.action { background: #2c3e50; height: 60px; font-size: 13px; }
+  .winch-btn.action:active:not(:disabled) { background: #0d6efd; border-color: #3b82f6; transform: translateY(2px); box-shadow: 0 2px 3px rgba(0,0,0,0.4); }
+  
+  .winch-btn.release { grid-column: 1 / -1; background: #eab308; color: #111; border-color: #facc15; }
+  .winch-btn.release:hover:not(:disabled) { background: #fde047; }
+  .winch-btn.release:active:not(:disabled) { transform: translateY(2px); }
 
   #right-sidebar {
     position: fixed;

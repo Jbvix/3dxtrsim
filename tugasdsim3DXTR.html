@@ -114,87 +114,121 @@
 
     <div id="panel-mooring" class="popup-panel">
         <div class="panel-header">Atracação</div>
-        <div class="control-group">
-            <button id="moorBow" class="btn-sec full-width" disabled>Ao Cais (Proa)</button>
-            <button id="moorStern" class="btn-sec full-width" disabled>Ao Cais (Popa)</button>
-        </div>
-        <div class="section">
-             <div class="section-title">Ao Navio Cargueiro (Lançar Cabo)</div>
-             <div class="row" style="margin-bottom: 8px;">
-                 <button id="moorTugBowToShipBow" class="btn-sec full-width">Cabo Proa ➔ Proa Navio</button>
-                 <button id="moorTugBowToShipStern" class="btn-sec full-width">Cabo Proa ➔ Popa Navio</button>
-             </div>
-             <div class="row">
-                 <button id="moorTugSternToShipBow" class="btn-sec full-width">Cabo Popa ➔ Proa Navio</button>
-                 <button id="moorTugSternToShipStern" class="btn-sec full-width">Cabo Popa ➔ Popa Navio</button>
-             </div>
-        </div>
-        <div id="bowWinchControl" class="winch-control">
-            <div class="flex-between"><label>Cabo de Proa (m)</label><span class="val" id="valBowLineLength">0</span></div>
-            <input id="bowLineLength" type="range" min="1" max="25" step="0.1" value="8" />
-            <div id="bowTensionGauge" class="tension-gauge">
-                <div class="flex-between">
-                    <label>Tensão (t)</label>
-                    <span class="val" id="valBowTension">0.0</span>
-                </div>
-                <div class="tension-bar-container">
-                    <div id="bowTensionBar" class="tension-bar"></div>
-                </div>
-            </div>
-        </div>
-        <div id="sternWinchControl" class="winch-control">
-            <div class="flex-between"><label>Cabo de Popa (m)</label><span class="val" id="valSternLineLength">0</span></div>
-            <input id="sternLineLength" type="range" min="1" max="25" step="0.1" value="8" />
-            <div id="sternTensionGauge" class="tension-gauge">
-                <div class="flex-between">
-                    <label>Tensão (t)</label>
-                    <span class="val" id="valSternTension">0.0</span>
-                </div>
-                <div class="tension-bar-container">
-                    <div id="sternTensionBar" class="tension-bar"></div>
-                </div>
-            </div>
-        </div>
         
-        <div class="section">
-             <div class="section-title">Navio Cargueiro ao Cais</div>
-             <div class="row" style="margin-bottom: 8px;">
-                 <button id="moorShipBow" class="btn-sec full-width" disabled>Ao Cais (Proa)</button>
-                 <button id="moorShipStern" class="btn-sec full-width" disabled>Ao Cais (Popa)</button>
-             </div>
-             <div id="shipBowWinchControl" class="winch-control">
-                <div class="flex-between"><label>Cabo de Proa (m)</label><span class="val" id="valShipBowLineLength">0</span></div>
-                <input id="shipBowLineLength" type="range" min="1" max="150" step="0.5" value="40" />
-                <div id="shipBowTensionGauge" class="tension-gauge">
-                    <div class="flex-between">
-                        <label>Tensão (t)</label>
-                        <span class="val" id="valShipBowTension">0.0</span>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-tug" onclick="switchMooringTab('tab-tug')">REBOCADOR</button>
+            <button class="tab-btn" data-tab="tab-ship" onclick="switchMooringTab('tab-ship')">NAVIO</button>
+        </div>
+
+        <!-- ABA: REBOCADOR -->
+        <div id="tab-tug" class="tab-content active">
+            <!-- Sub-Tabs: Proa e Popa -->
+            <div class="sub-tabs" style="display: flex; margin-bottom: 10px; border-bottom: 1px solid #444;">
+                <button class="sub-tab-btn active" data-subtab="subtab-tug-bow" onclick="switchSubTab('subtab-tug-bow', 'tab-tug')" style="flex:1; background:none; color:#0ea5e9; border:none; padding:8px; cursor:pointer; font-size:12px; font-weight:bold; border-bottom: 2px solid #0ea5e9;">PROA</button>
+                <button class="sub-tab-btn" data-subtab="subtab-tug-stern" onclick="switchSubTab('subtab-tug-stern', 'tab-tug')" style="flex:1; background:none; color:#aaa; border:none; padding:8px; cursor:pointer; font-size:12px; font-weight:normal;">POPA</button>
+            </div>
+
+            <!-- SUB-ABA: PROA -->
+            <div id="subtab-tug-bow" class="sub-tab-content" style="display: block;">
+                <!-- Guinchos do Rebocador (Física Ativa com Joystick Virtual) -->
+                <div id="bowWinchControl" class="winch-control">
+                    <div class="flex-between"><span style="color:#0ea5e9;font-weight:bold;font-size:12px;">MÓDULO CABO DE PROA</span><span class="val" id="valBowLineLength">0.0m</span></div>
+                    
+                    <div class="winch-group">
+                        <button id="clutchBow" class="winch-btn clutch form-control full-width off" disabled>🔴 FREIO ACIONADO (DESACOPLADO)</button>
+                        
+                        <div style="margin-top: 10px;">
+                            <button id="moorBow" class="btn-sec full-width" style="margin-bottom: 5px;" disabled>Ao Cais (Bollard Pier)</button>
+                            <button id="moorTugBowToShipBow" class="btn-sec full-width" style="margin-bottom: 5px;">Cabo Proa ➔ Proa Navio</button>
+                            <button id="moorTugBowToShipStern" class="btn-sec full-width">Cabo Proa ➔ Popa Navio</button>
+                        </div>
+
+                        <div class="winch-grid" style="margin-top: 10px;">
+                            <button id="winchBowPull" class="winch-btn action" disabled>⬆️ Recolher</button>
+                            <button id="winchBowPay" class="winch-btn action" disabled>⬇️ Pagar</button>
+                            <button id="winchBowBrakeRelease" class="winch-btn release" disabled>⚠️ BRAKE RELEASE</button>
+                        </div>
                     </div>
-                    <div class="tension-bar-container"><div id="shipBowTensionBar" class="tension-bar"></div></div>
+
+                    <div id="bowTensionGauge" class="tension-gauge">
+                        <div class="flex-between">
+                            <label>Tensão (t)</label>
+                            <span class="val" id="valBowTension">0.0</span>
+                        </div>
+                        <div class="tension-bar-container"><div id="bowTensionBar" class="tension-bar"></div></div>
+                    </div>
                 </div>
             </div>
-            <div id="shipSternWinchControl" class="winch-control">
-                <div class="flex-between"><label>Cabo de Popa (m)</label><span class="val" id="valShipSternLineLength">0</span></div>
-                <input id="shipSternLineLength" type="range" min="1" max="150" step="0.5" value="40" />
-                <div id="shipSternTensionGauge" class="tension-gauge">
-                    <div class="flex-between">
-                        <label>Tensão (t)</label>
-                        <span class="val" id="valShipSternTension">0.0</span>
+
+            <!-- SUB-ABA: POPA -->
+            <div id="subtab-tug-stern" class="sub-tab-content" style="display: none;">
+                <div id="sternWinchControl" class="winch-control">
+                    <div class="flex-between"><span style="color:#0ea5e9;font-weight:bold;font-size:12px;">MÓDULO CABO DE POPA</span><span class="val" id="valSternLineLength">0.0m</span></div>
+                    
+                    <div class="winch-group">
+                        <button id="clutchStern" class="winch-btn clutch off" disabled>🔴 FREIO ACIONADO (DESACOPLADO)</button>
+
+                        <div style="margin-top: 10px;">
+                            <button id="moorStern" class="btn-sec full-width" style="margin-bottom: 5px;" disabled>Ao Cais (Bollard Pier)</button>
+                            <button id="moorTugSternToShipBow" class="btn-sec full-width" style="margin-bottom: 5px;">Cabo Popa ➔ Proa Navio</button>
+                            <button id="moorTugSternToShipStern" class="btn-sec full-width">Cabo Popa ➔ Popa Navio</button>
+                        </div>
+
+                        <div class="winch-grid" style="margin-top: 10px;">
+                            <button id="winchSternPull" class="winch-btn action" disabled>⬆️ Recolher</button>
+                            <button id="winchSternPay" class="winch-btn action" disabled>⬇️ Pagar</button>
+                            <button id="winchSternBrakeRelease" class="winch-btn release" disabled>⚠️ BRAKE RELEASE</button>
+                        </div>
                     </div>
-                    <div class="tension-bar-container"><div id="shipSternTensionBar" class="tension-bar"></div></div>
+
+                    <div id="sternTensionGauge" class="tension-gauge">
+                        <div class="flex-between">
+                            <label>Tensão (t)</label>
+                            <span class="val" id="valSternTension">0.0</span>
+                        </div>
+                        <div class="tension-bar-container"><div id="sternTensionBar" class="tension-bar"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="section">
-             <div class="section-title">Características do Cabo</div>
-             <div>
-                <div class="flex-between"><label>Carga de Ruptura (t)</label><span class="val" id="valBreakingLoad">102</span></div>
-                <input id="breakingLoad" type="range" min="20" max="510" step="10" value="102" />
+
+        <!-- ABA: NAVIO -->
+        <div id="tab-ship" class="tab-content">
+            <div class="section">
+                 <div class="section-title">Atracação do Navio ao Cais</div>
+                 <div class="row" style="margin-bottom: 8px;">
+                     <button id="moorShipBow" class="btn-sec full-width" disabled>Amarração Proa</button>
+                     <button id="moorShipStern" class="btn-sec full-width" disabled>Amarração Popa</button>
+                 </div>
+
+                 <div id="shipBowWinchControl" class="winch-control">
+                    <div class="flex-between"><label>Cabo de Proa (m)</label><span class="val" id="valShipBowLineLength">0</span></div>
+                    <input id="shipBowLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                    <div id="shipBowTensionGauge" class="tension-gauge">
+                        <div class="flex-between"><label>Tensão (t)</label><span class="val" id="valShipBowTension">0.0</span></div>
+                        <div class="tension-bar-container"><div id="shipBowTensionBar" class="tension-bar"></div></div>
+                    </div>
+                </div>
+                <div id="shipSternWinchControl" class="winch-control">
+                    <div class="flex-between"><label>Cabo de Popa (m)</label><span class="val" id="valShipSternLineLength">0</span></div>
+                    <input id="shipSternLineLength" type="range" min="1" max="150" step="0.5" value="40" />
+                    <div id="shipSternTensionGauge" class="tension-gauge">
+                        <div class="flex-between"><label>Tensão (t)</label><span class="val" id="valShipSternTension">0.0</span></div>
+                        <div class="tension-bar-container"><div id="shipSternTensionBar" class="tension-bar"></div></div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <div class="flex-between"><label>Rigidez (kN/m)</label><span class="val" id="valStiffness">20</span></div>
-                <input id="stiffness" type="range" min="5" max="100" step="1" value="20" />
+            
+            <div class="section">
+                 <div class="section-title">Física do Sistema de Cabos</div>
+                 <div>
+                    <div class="flex-between"><label>Carga de Ruptura (t)</label><span class="val" id="valBreakingLoad">102</span></div>
+                    <input id="breakingLoad" type="range" min="20" max="510" step="10" value="102" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Rigidez (kN/m)</label><span class="val" id="valStiffness">20</span></div>
+                    <input id="stiffness" type="range" min="5" max="100" step="1" value="20" />
+                </div>
             </div>
         </div>
     </div>

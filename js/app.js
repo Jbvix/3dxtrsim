@@ -48,8 +48,8 @@ const tugState = {
 };
 
 const mooringState = {
-    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, 0.7, 5.3), restLength: 0, targetRestLength: 0 },
-    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, -0.3, -3.6), restLength: 0, targetRestLength: 0 }
+    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, 0.7, 5.3), restLength: 0, targetRestLength: 0, isCoupled: false, payActive: false, pullActive: false, isBreakRelease: false },
+    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, -0.3, -3.6), restLength: 0, targetRestLength: 0, isCoupled: false, payActive: false, pullActive: false, isBreakRelease: false }
 };
 
 const shipMooringState = {
@@ -156,10 +156,16 @@ const ui = {
     scaleParams: document.getElementById('scaleParams'),
     moorBow: document.getElementById('moorBow'),
     moorStern: document.getElementById('moorStern'),
+    clutchBow: document.getElementById('clutchBow'),
+    clutchStern: document.getElementById('clutchStern'),
     bowWinchControl: document.getElementById('bowWinchControl'),
     sternWinchControl: document.getElementById('sternWinchControl'),
-    bowLineLength: document.getElementById('bowLineLength'),
-    sternLineLength: document.getElementById('sternLineLength'),
+    winchBowPull: document.getElementById('winchBowPull'),
+    winchBowPay: document.getElementById('winchBowPay'),
+    winchBowBrakeRelease: document.getElementById('winchBowBrakeRelease'),
+    winchSternPull: document.getElementById('winchSternPull'),
+    winchSternPay: document.getElementById('winchSternPay'),
+    winchSternBrakeRelease: document.getElementById('winchSternBrakeRelease'),
     valBowLineLength: document.getElementById('valBowLineLength'),
     valSternLineLength: document.getElementById('valSternLineLength'),
     breakingLoad: document.getElementById('breakingLoad'),
@@ -957,16 +963,80 @@ function setupUIEvents() {
     document.getElementById('moorTugSternToShipBow')?.addEventListener('click', () => toggleShipMooring('stern', 'bow'));
     document.getElementById('moorTugSternToShipStern')?.addEventListener('click', () => toggleShipMooring('stern', 'stern'));
 
-    ui.bowLineLength.addEventListener('input', (e) => {
-        if (mooringState.bow.isMoored) {
-            mooringState.bow.targetRestLength = parseFloat(e.target.value);
+    const setupWinchHoldEvent = (btn, stateKey, payOrPull) => {
+        if(!btn) return;
+        ['pointerdown', 'touchstart'].forEach(evt => btn.addEventListener(evt, (e) => {
+            e.preventDefault();
+            if(!mooringState[stateKey].isCoupled) return;
+            mooringState[stateKey][payOrPull === 'pay' ? 'payActive' : 'pullActive'] = true;
+        }));
+        ['pointerup', 'pointerleave', 'touchend', 'touchcancel'].forEach(evt => btn.addEventListener(evt, (e) => {
+            e.preventDefault();
+            mooringState[stateKey][payOrPull === 'pay' ? 'payActive' : 'pullActive'] = false;
+        }));
+    };
+
+    setupWinchHoldEvent(ui.winchBowPull, 'bow', 'pull');
+    setupWinchHoldEvent(ui.winchBowPay, 'bow', 'pay');
+    setupWinchHoldEvent(ui.winchSternPull, 'stern', 'pull');
+    setupWinchHoldEvent(ui.winchSternPay, 'stern', 'pay');
+
+    const toggleBrakeRelease = (type) => {
+        const state = mooringState[type];
+        const btn = type === 'bow' ? ui.winchBowBrakeRelease : ui.winchSternBrakeRelease;
+        if (!state.isMoored) return;
+        
+        state.isBreakRelease = !state.isBreakRelease;
+        if (state.isBreakRelease) {
+            btn.style.backgroundColor = '#dc3545';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#ff4d4d';
+        } else {
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+            btn.style.borderColor = '';
         }
-    });
-    ui.sternLineLength.addEventListener('input', (e) => {
-        if (mooringState.stern.isMoored) {
-            mooringState.stern.targetRestLength = parseFloat(e.target.value);
+    };
+    document.getElementById('winchBowBrakeRelease')?.addEventListener('click', () => toggleBrakeRelease('bow'));
+    document.getElementById('winchSternBrakeRelease')?.addEventListener('click', () => toggleBrakeRelease('stern'));
+
+    const toggleClutch = (type) => {
+        const state = mooringState[type];
+        const btn = type === 'bow' ? ui.clutchBow : ui.clutchStern;
+        const pullBtn = type === 'bow' ? ui.winchBowPull : ui.winchSternPull;
+        const payBtn = type === 'bow' ? ui.winchBowPay : ui.winchSternPay;
+        const releaseBtn = type === 'bow' ? ui.winchBowBrakeRelease : ui.winchSternBrakeRelease;
+
+        if (!state.isMoored) return;
+        state.isCoupled = !state.isCoupled;
+
+        if (state.isCoupled) {
+            btn.classList.remove('off');
+            btn.classList.add('on');
+            btn.textContent = '🟢 MOTOR ACOPLADO';
+            pullBtn.disabled = false;
+            payBtn.disabled = false;
+            releaseBtn.disabled = true;
+            
+            // Cancela break release se estiver enganchando o motor
+            state.isBreakRelease = false;
+            releaseBtn.style.backgroundColor = '';
+            releaseBtn.style.color = '';
+            releaseBtn.style.borderColor = '';
+        } else {
+            btn.classList.remove('on');
+            btn.classList.add('off');
+            btn.textContent = '🔴 FREIO ACIONADO (DESACOPLADO)';
+            pullBtn.disabled = true;
+            payBtn.disabled = true;
+            releaseBtn.disabled = false;
+            state.payActive = false;
+            state.pullActive = false;
         }
-    });
+    };
+
+    ui.clutchBow?.addEventListener('click', () => toggleClutch('bow'));
+    ui.clutchStern?.addEventListener('click', () => toggleClutch('stern'));
 
     ui.shipBowLineLength.addEventListener('input', (e) => {
         if (shipMooringState.bow.isMoored) {
@@ -1156,23 +1226,43 @@ function setupUIEvents() {
 function toggleMooring(type) {
     const state = mooringState[type];
     const button = ui[type === 'bow' ? 'moorBow' : 'moorStern'];
-    const winchControl = ui[type === 'bow' ? 'bowWinchControl' : 'sternWinchControl'];
-    const winchSlider = ui[type === 'bow' ? 'bowLineLength' : 'sternLineLength'];
     const winchValue = ui[type === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
     const tensionBar = ui[type === 'bow' ? 'bowTensionBar' : 'sternTensionBar'];
     const tensionVal = ui[type === 'bow' ? 'valBowTension' : 'valSternTension'];
+    const clutchBtn = ui[type === 'bow' ? 'clutchBow' : 'clutchStern'];
 
     if (state.isMoored) {
         state.isMoored = false;
         state.bollard = null;
         state.targetBollardEl = null;
         state.line.visible = false;
-        winchControl.style.display = 'none';
-        button.textContent = `Atracar ${type === 'bow' ? 'Proa' : 'Popa'}`;
+        
+        button.textContent = `Ao Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
         button.classList.remove('btn-success');
         button.classList.add('btn-sec');
         tensionVal.textContent = '0.0';
         tensionBar.style.width = '0%';
+        
+        // Reset clutch and winch
+        state.isCoupled = false;
+        state.payActive = false;
+        state.pullActive = false;
+        state.isBreakRelease = false;
+        clutchBtn.disabled = true;
+        clutchBtn.classList.remove('on');
+        clutchBtn.classList.add('off');
+        clutchBtn.textContent = '🔴 FREIO ACIONADO (DESACOPLADO)';
+        const pullBtn = type === 'bow' ? ui.winchBowPull : ui.winchSternPull;
+        const payBtn = type === 'bow' ? ui.winchBowPay : ui.winchSternPay;
+        const releaseBtn = type === 'bow' ? ui.winchBowBrakeRelease : ui.winchSternBrakeRelease;
+        if(pullBtn) pullBtn.disabled = true;
+        if(payBtn) payBtn.disabled = true;
+        if(releaseBtn) {
+            releaseBtn.disabled = true;
+            releaseBtn.style.backgroundColor = '';
+            releaseBtn.style.color = '';
+            releaseBtn.style.borderColor = '';
+        }
 
     } else {
         const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
@@ -1196,13 +1286,16 @@ function toggleMooring(type) {
             state.targetBollardEl = closestBollardEl;
             state.line.visible = true;
             state.restLength = minDistance;
-            state.targetRestLength = minDistance;
-            winchSlider.value = minDistance;
-            winchValue.textContent = minDistance.toFixed(1);
-            winchControl.style.display = 'block';
-            button.textContent = `Largar ${type === 'bow' ? 'Proa' : 'Popa'}`;
+            winchValue.textContent = minDistance.toFixed(1) + 'm';
+            
+            button.textContent = `Largar Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
             button.classList.remove('btn-sec');
             button.classList.add('btn-success');
+            
+            // Allow winch operation and Brake Release since we start in Braked mode
+            clutchBtn.disabled = false;
+            const releaseBtn = type === 'bow' ? ui.winchBowBrakeRelease : ui.winchSternBrakeRelease;
+            if(releaseBtn) releaseBtn.disabled = false;
         } else {
             alert('Nenhum cabeço próximo o suficiente para atracar.');
         }
@@ -1223,7 +1316,7 @@ function toggleShipPierMooring(type) {
         state.bollard = null;
         state.targetBollardEl = null;
         state.line.visible = false;
-        winchControl.style.display = 'none';
+        
         button.textContent = `Ao Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
         button.classList.remove('btn-success');
         button.classList.add('btn-sec');
@@ -1256,7 +1349,7 @@ function toggleShipPierMooring(type) {
             state.targetRestLength = minDistance;
             winchSlider.value = minDistance;
             winchValue.textContent = minDistance.toFixed(1);
-            winchControl.style.display = 'block';
+            
             button.textContent = `Largar Cais (${type === 'bow' ? 'Proa' : 'Popa'})`;
             button.classList.remove('btn-sec');
             button.classList.add('btn-success');
@@ -1295,22 +1388,20 @@ function toggleShipMooring(tugEnd, shipEnd) {
         state.line.visible = true;
     }
 
-    // Adapta o Layout do Guincho Clássico simulando o atracamento no navio
+    // Adapta o Layout do Guincho simulando o atracamento no navio
     const button = ui[tugEnd === 'bow' ? 'moorBow' : 'moorStern'];
-    const winchControl = ui[tugEnd === 'bow' ? 'bowWinchControl' : 'sternWinchControl'];
-    const winchSlider = ui[tugEnd === 'bow' ? 'bowLineLength' : 'sternLineLength'];
     const winchValue = ui[tugEnd === 'bow' ? 'valBowLineLength' : 'valSternLineLength'];
-
-    winchControl.style.display = 'block';
+    const clutchBtn = ui[tugEnd === 'bow' ? 'clutchBow' : 'clutchStern'];
+    
     button.textContent = `Largar Navio (${tugEnd === 'bow' ? 'Proa' : 'Popa'})`;
     button.classList.remove('btn-sec');
     button.classList.add('btn-success');
     button.disabled = false; // Mantém botão ativo para podermos largar a qualquer momento
 
-    winchSlider.min = (distance * 0.1).toFixed(1);
-    winchSlider.max = (distance * 2.0).toFixed(1);
-    winchSlider.value = distance.toFixed(1);
-    winchValue.textContent = distance.toFixed(1);
+    winchValue.textContent = distance.toFixed(1) + 'm';
+    clutchBtn.disabled = false; // Ativa para permitir engatar o guincho
+    const releaseBtn = ui[tugEnd === 'bow' ? 'winchBowBrakeRelease' : 'winchSternBrakeRelease'];
+    if(releaseBtn) releaseBtn.disabled = false;
 }
 
 function setupBuoyControls() {
@@ -1475,14 +1566,17 @@ function updatePhysics(dt) {
                 state.bollard = state.targetBollardEl.mesh.getWorldPosition(new THREE.Vector3());
             }
 
-            const lengthDifference = state.targetRestLength - state.restLength;
-            if (Math.abs(lengthDifference) > 0.01) {
-                const adjustment = Math.sign(lengthDifference) * WINCH_SPEED * dt;
-                state.restLength += (Math.abs(adjustment) > Math.abs(lengthDifference)) ? lengthDifference : adjustment;
-                lineLengthVal.textContent = state.restLength.toFixed(1);
-            }
-
             const mooringPointWorld = cgPivot.localToWorld(state.mooringPoint.clone());
+
+            if (state.isBreakRelease) {
+                const distance = state.bollard.distanceTo(mooringPointWorld);
+                if (distance > state.restLength) state.restLength = distance; 
+            } else if (state.isCoupled) {
+                if (state.pullActive) state.restLength = Math.max(1.0, state.restLength - WINCH_SPEED * dt);
+                if (state.payActive) state.restLength += WINCH_SPEED * dt;
+            }
+            lineLengthVal.textContent = state.restLength.toFixed(1) + 'm';
+
             const lineVector = new THREE.Vector3().subVectors(state.bollard, mooringPointWorld);
             const currentLength = lineVector.length();
             const stretch = currentLength - state.restLength;
@@ -2139,4 +2233,32 @@ window.switchAdjTab = function(tabId) {
     parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     parent.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+};
+
+window.switchMooringTab = function(tabId) {
+    const parent = document.getElementById('panel-mooring');
+    if(!parent) return;
+    parent.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    parent.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+};
+
+window.switchSubTab = function(tabId, parentId) {
+    const parent = document.getElementById(parentId);
+    if(!parent) return;
+    parent.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
+    parent.querySelectorAll('.sub-tab-btn').forEach(btn => {
+        btn.style.color = '#aaa';
+        btn.style.borderBottom = 'none';
+        btn.style.fontWeight = 'normal';
+    });
+    document.getElementById(tabId).style.display = 'block';
+    
+    const activeBtn = parent.querySelector(`.sub-tab-btn[data-subtab="${tabId}"]`);
+    if(activeBtn) {
+        activeBtn.style.color = '#0ea5e9';
+        activeBtn.style.borderBottom = '2px solid #0ea5e9';
+        activeBtn.style.fontWeight = 'bold';
+    }
 };
