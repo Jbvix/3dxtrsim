@@ -27,9 +27,10 @@ class AsdPanelLauncher extends HTMLElement {
              display: none; pointer-events: auto; background: #fff; color: #111; border-radius: 14px;
              box-shadow: 0 24px 60px rgba(0,0,0,.25); border: 1px solid #e7e7e7;
              min-width: 336px; min-height: 480px; overflow: hidden;
-             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+             will-change: top, left;
       }
-      .hdr { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; cursor: move;
+      .win.transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+      .hdr { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; cursor: move; touch-action: none;
              background: linear-gradient(180deg, #f8f9fb 0%, #f0f2f5 100%); border-bottom: 1px solid #e6e8eb; }
       .ttl { flex: 1; font: 600 13px/1 system-ui, -apple-system, Segoe UI, Roboto; letter-spacing: .2px; text-align: center; }
       .hdr-buttons { display: flex; gap: 8px; position: absolute; left: 12px; }
@@ -162,6 +163,7 @@ class AsdPanelLauncher extends HTMLElement {
   toggle() { this._win.style.display === 'block' ? this.close() : this.open(); }
 
   toggleFullScreen() {
+    this._win.classList.add('transition');
     if (this._isFullScreen) {
       Object.assign(this._win.style, this._lastState);
     } else {
@@ -174,6 +176,7 @@ class AsdPanelLauncher extends HTMLElement {
       });
     }
     this._isFullScreen = !this._isFullScreen;
+    setTimeout(() => this._win.classList.remove('transition'), 300);
   }
 }
 customElements.define('asd-panel-launcher', AsdPanelLauncher);
