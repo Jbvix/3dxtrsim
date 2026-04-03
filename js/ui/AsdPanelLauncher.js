@@ -30,7 +30,7 @@ class AsdPanelLauncher extends HTMLElement {
              transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .hdr { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; cursor: move;
-             background: linear-gradient(180deg, #f8f9fb 0%, #f0f2f5 100%); border-bottom: 1px solid #e6e8eb; }
+             background: linear-gradient(180deg, #f8f9fb 0%, #f0f2f5 100%); border-bottom: 1px solid #e6e8eb; touch-action: none; }
       .ttl { flex: 1; font: 600 13px/1 system-ui, -apple-system, Segoe UI, Roboto; letter-spacing: .2px; text-align: center; }
       .hdr-buttons { display: flex; gap: 8px; position: absolute; left: 12px; }
       .hdr-btn { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
@@ -39,7 +39,7 @@ class AsdPanelLauncher extends HTMLElement {
       .cnt { width: 100%; height: calc(100% - 44px); background: #fff; }
       iframe { width: 100%; height: 100%; border: 0; display: block; }
       .resize-handle { position: absolute; bottom: 0; right: 0; width: 16px; height: 16px;
-                       cursor: se-resize; z-index: 10;
+                       cursor: se-resize; z-index: 10; touch-action: none;
                        background: repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.2) 3px, rgba(0,0,0,0.2) 4px);
       }
       @media (max-width: 520px) {
