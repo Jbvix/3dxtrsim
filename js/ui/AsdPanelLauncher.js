@@ -70,7 +70,6 @@ class AsdPanelLauncher extends HTMLElement {
     const iframe = document.createElement('iframe');
     iframe.loading = 'eager';
     iframe.referrerPolicy = 'no-referrer';
-    iframe.sandbox = 'allow-same-origin allow-scripts allow-downloads';
     // A propriedade 'src' será definida na primeira vez que o painel for aberto.
 
     const handle = document.createElement('div');
