@@ -233,7 +233,7 @@ const ui = {
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x121723);
+    scene.background = new THREE.Color(0x7ec0ee); // Céu claro diurno
     clock = new THREE.Clock();
 
     camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
@@ -249,16 +249,16 @@ function init() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x2088aa, metalness: .7, roughness: .25 }));
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x1da2d8, metalness: .6, roughness: .2 }));
     sea.rotation.x = -Math.PI / 2;
     scene.add(sea);
 
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.3);
-    dir.position.set(10, 18, 8);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.3)); // Luz ambiente mais clara
+    const dir = new THREE.DirectionalLight(0xffffff, 2.0); // Sol mais forte
+    dir.position.set(10, 25, 10);
     scene.add(dir);
 
     cgPivot = new THREE.Group();
