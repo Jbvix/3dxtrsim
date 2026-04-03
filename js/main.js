@@ -48,8 +48,8 @@ const tugState = {
 };
 
 const mooringState = {
-    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, 6), restLength: 0, targetRestLength: 0 },
-    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 1, -6), restLength: 0, targetRestLength: 0 }
+    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, 0.7, 5.3), restLength: 0, targetRestLength: 0 },
+    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, -0.3, -3.6), restLength: 0, targetRestLength: 0 }
 };
 
 const shipMooringState = {
