@@ -2132,3 +2132,11 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
 });
+
+window.switchAdjTab = function(tabId) {
+    const parent = document.getElementById('panel-adjustments');
+    parent.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    parent.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+};

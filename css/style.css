@@ -26,7 +26,7 @@
   #panel-asd-2d { top: 10px; left: 10px; width: fit-content; max-width: 95vw; display: none; }
   #panel-mooring { top: 10px; left: 450px; width: 300px; display: none; }
   #panel-maneuvers { top: 10px; left: 770px; width: 300px; display: none; }
-  #panel-adjustments { top: 250px; left: 10px; width: 420px; display: none; }
+  #panel-adjustments { top: 250px; left: 10px; width: 330px; display: none; }
   #panel-views { top: 280px; left: 450px; width: 300px; display: none; }
   #panel-environment { top: 280px; left: 770px; width: 300px; display: none; }
   #panel-editor { top: 550px; left: 770px; width: 300px; display: none; }
@@ -49,7 +49,16 @@
     user-select: none;
     text-align: center;
     font-weight: bold;
+    touch-action: none;
   }
+  
+  /* Sistema de Abas (Tabs) */
+  .tabs { display: flex; border-bottom: 1px solid #444; margin: 10px -8px; }
+  .tab-btn { flex: 1; background: #00000000; color: #aaa; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; outline: none; border-radius: 0; }
+  .tab-btn:hover { background: #1f232b; color: #fff; }
+  .tab-btn.active { color: #0d6efd; border-bottom: 2px solid #0d6efd; background: #161b22; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 

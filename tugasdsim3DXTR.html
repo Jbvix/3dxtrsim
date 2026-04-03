@@ -200,57 +200,73 @@
 
     <div id="panel-adjustments" class="popup-panel">
         <div class="panel-header">Ajustes & Status</div>
-        <div class="row">
-            <label>Velocidade:</label><span class="val" id="statusSpeed">0.00 nós</span>
-            <label>Rumo:</label><span class="val" id="statusHeading">0.0 °</span>
-            <label>Veloc. Giro:</label><span class="val" id="statusYawRate">0.00 °/s</span>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-status" onclick="switchAdjTab('tab-status')">Status / Física</button>
+            <button class="tab-btn" data-tab="tab-moor" onclick="switchAdjTab('tab-moor')">Atracação</button>
         </div>
-        <div class="row justify-end" style="display: none;"><button id="resetPosition" class="btn-sec">Resetar Posição</button></div>
-        <div>
-            <div class="flex-between"><label>CG Proa/Popa (Z)</label><span class="val" id="vZ">0.00</span></div>
-            <input id="cgZ" type="range" min="-5" max="5" step="0.01" value="0" />
-        </div>
-        <div>
-            <div class="flex-between"><label>CG Boreste/Bombordo (X)</label><span class="val" id="vX">0.00</span></div>
-            <input id="cgX" type="range" min="-5" max="5" step="0.01" value="0" />
-        </div>
-        <div>
-            <div class="flex-between"><label>Elevação na Água (Y)</label><span class="val" id="valElevationY">2.00</span></div>
-            <input id="elevationY" type="range" min="2" max="4" step="0.05" value="2" />
-        </div>
-        <div class="row flex-between">
-            <label>Escala (X,Y,Z):</label>
-            <span class="val" id="scaleParams">Carregando...</span>
-        </div>
-        <div class="row flex-between" style="margin-top: 10px;">
-            <label>Cor da Pintura:</label>
-            <input type="color" id="tugColorPicker" value="#ff3300" style="background:#222; border:1px solid #444; border-radius:4px; height: 30px; width: 60px; cursor: pointer;">
-        </div>
-        <div class="section">
-             <div class="section-title">Pontos de Atracação no Casco</div>
-             <div>
-                <div class="flex-between"><label>Proa - Posição Z (m)</label><span class="val" id="valBowPointZ">5.3</span></div>
-                <input id="bowPointZ" type="range" min="0" max="8" step="0.1" value="5.3" />
+
+        <div id="tab-status" class="tab-content active">
+            <div class="row">
+                <label>Velocidade:</label><span class="val" id="statusSpeed">0.00 nós</span>
+                <label>Rumo:</label><span class="val" id="statusHeading">0.0 °</span>
             </div>
-             <div>
-                <div class="flex-between"><label>Proa - Posição X (m)</label><span class="val" id="valBowPointX">0.0</span></div>
-                <input id="bowPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
+            <div class="row" style="margin-bottom: 10px;">
+                <label>Veloc. Giro:</label><span class="val" id="statusYawRate">0.00 °/s</span>
+            </div>
+            <div class="row justify-end" style="display: none;"><button id="resetPosition" class="btn-sec">Resetar Posição</button></div>
+            <div>
+                <div class="flex-between"><label>CG Proa/Popa (Z)</label><span class="val" id="vZ">0.00</span></div>
+                <input id="cgZ" type="range" min="-5" max="5" step="0.01" value="0" />
             </div>
             <div>
-                <div class="flex-between"><label>Proa - Posição Y (m)</label><span class="val" id="valBowPointY">0.7</span></div>
-                <input id="bowPointY" type="range" min="-4" max="4" step="0.1" value="0.7" />
+                <div class="flex-between"><label>CG Boreste/Bombordo (X)</label><span class="val" id="vX">0.00</span></div>
+                <input id="cgX" type="range" min="-5" max="5" step="0.01" value="0" />
+            </div>
+            <div>
+                <div class="flex-between"><label>Elevação na Água (Y)</label><span class="val" id="valElevationY">2.00</span></div>
+                <input id="elevationY" type="range" min="2" max="4" step="0.05" value="2" />
+            </div>
+            <div class="row flex-between">
+                <label>Escala (X,Y,Z):</label>
+                <span class="val" id="scaleParams" style="font-size: 11px;">Carregando...</span>
+            </div>
+            <div class="row flex-between" style="margin-top: 10px;">
+                <label>Cor da Pintura:</label>
+                <input type="color" id="tugColorPicker" value="#ff3300" style="background:#222; border:1px solid #444; border-radius:4px; height: 30px; width: 60px; cursor: pointer;">
+            </div>
+        </div>
+
+        <div id="tab-moor" class="tab-content">
+            <div class="section">
+                 <div class="section-title">Posição no Convés: Proa</div>
+                 <div>
+                    <div class="flex-between"><label>Proa - Posição Z (m)</label><span class="val" id="valBowPointZ">5.3</span></div>
+                    <input id="bowPointZ" type="range" min="0" max="8" step="0.1" value="5.3" />
+                </div>
+                 <div>
+                    <div class="flex-between"><label>Proa - Posição X (m)</label><span class="val" id="valBowPointX">0.0</span></div>
+                    <input id="bowPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Proa - Posição Y (m)</label><span class="val" id="valBowPointY">0.7</span></div>
+                    <input id="bowPointY" type="range" min="-4" max="4" step="0.1" value="0.7" />
+                </div>
             </div>
             <div class="section">
-                <div class="flex-between"><label>Popa - Posição Z (m)</label><span class="val" id="valSternPointZ">-3.6</span></div>
-                <input id="sternPointZ" type="range" min="-8" max="0" step="0.1" value="-3.6" />
-            </div>
-            <div>
-                <div class="flex-between"><label>Popa - Posição X (m)</label><span class="val" id="valSternPointX">0.0</span></div>
-                <input id="sternPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
-            </div>
-            <div>
-                <div class="flex-between"><label>Popa - Posição Y (m)</label><span class="val" id="valSternPointY">-0.3</span></div>
-                <input id="sternPointY" type="range" min="-4" max="4" step="0.1" value="-0.3" />
+                <div class="section-title">Posição no Convés: Popa</div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição Z (m)</label><span class="val" id="valSternPointZ">-3.6</span></div>
+                    <input id="sternPointZ" type="range" min="-8" max="0" step="0.1" value="-3.6" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição X (m)</label><span class="val" id="valSternPointX">0.0</span></div>
+                    <input id="sternPointX" type="range" min="-2" max="2" step="0.1" value="0.0" />
+                </div>
+                <div>
+                    <div class="flex-between"><label>Popa - Posição Y (m)</label><span class="val" id="valSternPointY">-0.3</span></div>
+                    <input id="sternPointY" type="range" min="-4" max="4" step="0.1" value="-0.3" />
+                </div>
             </div>
         </div>
         <div class="section-subtitle">
