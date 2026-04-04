@@ -12,6 +12,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
+import { Ship } from './entities/Ship.js';
+import { Tugboat } from './entities/Tugboat.js';
+
 // ====================== VARIÁVEIS GLOBAIS E CONFIGURAÇÕES ======================
 
 // ===== Variáveis Globais =====
@@ -37,74 +40,28 @@ const cameraViews = {
 let raycaster, mouse;
 const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-// ===== Estado da Simulação =====
-const tugState = {
-    position: new THREE.Vector3(0, 0, 0),
-    velocity: new THREE.Vector3(0, 0, 0),
-    yaw: 0,
-    yawRate: 0,
-    boundingBox: new THREE.Box3(),
-    isPaused: false,
-};
+// ===== Instanciar Entidades (OOP) =====
+const mainShip = new Ship();
+const mainTug = new Tugboat();
 
-const mooringState = {
-    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, 0.7, 5.3), restLength: 0, targetRestLength: 0, isCoupled: false, payActive: false, pullActive: false, isBreakRelease: false },
-    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0.0, -0.3, -3.6), restLength: 0, targetRestLength: 0, isCoupled: false, payActive: false, pullActive: false, isBreakRelease: false }
-};
+// Variáveis de referência (Mantidas para compatibilidade com Game Loop purgado)
+const shipState = mainShip.state;
+const shipControls = mainShip.controls;
+const shipPhysics = mainShip.physics;
+const shipMooringState = mainShip.mooringState;
 
-const shipMooringState = {
-    bow: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 10, 60), restLength: 0, targetRestLength: 0 },
-    stern: { isMoored: false, bollard: null, line: null, mooringPoint: new THREE.Vector3(0, 10, -60), restLength: 0, targetRestLength: 0 }
-};
+const tugState = mainTug.state;
+const physics = mainTug.physics;
+const asdControls = mainTug.asdControls;
+const mooringState = mainTug.mooringState;
+
 const MOORING_DISTANCE_THRESHOLD = 8;
-const WINCH_SPEED = 2.0; // m/s
-
-
-const shipState = {
-    position: new THREE.Vector3(50, 0, -30),
-    velocity: new THREE.Vector3(0, 0, 0),
-    yaw: -Math.PI / 6,
-    yawRate: 0,
-    boundingBox: new THREE.Box3()
-};
+const WINCH_SPEED = 2.0;
 
 const debugData = { lineTension: 0, tugForce: 0, shipForce: 0, shipTorque: 0 };
-const shipControls = { engine: 0, rudder: 0, bowThruster: 0, draft: 5.0 };
-const shipPhysics = {
-    mass: 10000000,
-    momentOfInertia: 150000000,
-    linearDamping: 0.9997,
-    angularDamping: 0.998,
-    windCoefficient: 8000,
-    currentCoefficient: 150000,
-    windLeverArm: 10,
-    currentLeverArm: 5,
-};
-
-const asdControls = {
-    port: { angle: 0, thrust: 0 },
-    starboard: { angle: 0, thrust: 0 }
-};
-
 const environmentControls = {
     wind: { strength: 0, direction: 0 },
     current: { strength: 0, direction: 0 }
-};
-
-const physics = {
-    mass: 100000,
-    momentOfInertia: 3350000,
-    maxThrust: 294210.0,
-    linearDamping: 0.98,
-    angularDamping: 0.98,
-    thrusterOffset: { x: 1.5, z: -6.5 }, // Z centralizado no hemisfério da popa
-    lineStiffness: 20000.0,
-    lineDamping: 0.85,
-    lineBreakingLoad: 102 * 9807,
-    windCoefficient: 1000,
-    currentCoefficient: 20000,
-    windLeverArm: 1.5,
-    currentLeverArm: 0.5,
 };
 
 const buoyPhysics = {
