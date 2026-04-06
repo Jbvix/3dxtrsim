@@ -212,6 +212,7 @@ function init() {
     renderer.setSize(innerWidth, innerHeight);
     document.getElementById('app').appendChild(renderer.domElement);
     renderer.domElement.addEventListener('pointerdown', onPointerDown, false);
+    renderer.domElement.addEventListener('pointerup', onPointerUp, false);
     renderer.domElement.addEventListener('pointermove', onPointerMove, false);
 
 
@@ -2112,7 +2113,7 @@ function enterConstructionMode() {
     ui.toggleConstructionMode.classList.add('btn-danger');
     ui.constructionOptions.style.display = 'grid';
     constructionGrid.visible = true;
-    controls.enableRotate = false;
+    controls.enableRotate = true; // Liberdade para orbitar no modo construção
 }
 
 function exitConstructionMode() {
@@ -2196,45 +2197,59 @@ function createPortObjectMesh(type, elevation) {
     } else if (type === 'warehouse') {
         mesh = new THREE.Group();
         const baseGeo = new THREE.BoxGeometry(30, 10, 20);
-        const baseMat = new THREE.MeshStandardMaterial({ color: 0xd9e3f0 });
+        const baseMat = new THREE.MeshLambertMaterial({ color: 0xd9e3f0 });
         const base = new THREE.Mesh(baseGeo, baseMat);
         base.position.y = 5;
         
-        const roofGeo = new THREE.ConeGeometry(18, 3, 4); // Piramide de 4 lados
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x2b467a });
+        // Telhado Arqueado de Hangar (Metade de cilindro deitado)
+        const roofGeo = new THREE.CylinderGeometry(10, 10, 30, 20, 1, false, 0, Math.PI);
+        const roofMat = new THREE.MeshLambertMaterial({ color: 0x556677, side: THREE.DoubleSide });
         const roof = new THREE.Mesh(roofGeo, roofMat);
-        roof.rotation.y = Math.PI / 4;
-        roof.scale.set(1.2, 1, 0.85); // Estica para cobrir a base 30x20
-        roof.position.y = 11.5;
+        roof.rotation.z = Math.PI / 2; // Estende o cilindro ao longo do eixo X (30m)
+        roof.position.y = 10; // Senta no topo da base de 10m
         
         mesh.add(base);
         mesh.add(roof);
     } else if (type === 'container') {
-        const colors = [0x8b0000, 0x00008b, 0x006400, 0xff8c00];
+        const colors = [0xff2222, 0x1144ff, 0x11aa11, 0xffaa00, 0xdddddd]; // Cores vibrantes
         const color = colors[Math.floor(Math.random() * colors.length)];
         const geo = new THREE.BoxGeometry(2.44, 2.6, 12.0); // FEU
-        const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 });
+        const mat = new THREE.MeshLambertMaterial({ color: color }); // Lambert responde melhor a luz ambiente
         mesh = new THREE.Mesh(geo, mat);
         mesh.position.y = 1.3;
     } else if (type === 'shiploader') {
         mesh = new THREE.Group();
-        const towerGeo = new THREE.BoxGeometry(4, 25, 4);
-        const towerMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
-        const tower = new THREE.Mesh(towerGeo, towerMat);
-        tower.position.y = 12.5;
+        const matYellow = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+        const matDark = new THREE.MeshLambertMaterial({ color: 0x222222 });
 
-        const armGeo = new THREE.BoxGeometry(40, 2, 2);
-        const arm = new THREE.Mesh(armGeo, towerMat);
-        arm.position.set(15, 20, 0);
+        // Base/Pernas do Guindaste STS
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 2), matDark); leg1.position.set(-6, 5, -6);
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 2), matDark); leg2.position.set(6, 5, -6);
+        const leg3 = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 2), matDark); leg3.position.set(-6, 5, 6);
+        const leg4 = new THREE.Mesh(new THREE.BoxGeometry(2, 10, 2), matDark); leg4.position.set(6, 5, 6);
+        
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(14, 2, 14), matDark); beam.position.y = 11;
+        
+        // Torres Altas
+        const tower1 = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 2), matYellow); tower1.position.set(-4, 22, -4);
+        const tower2 = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 2), matYellow); tower2.position.set(4, 22, -4);
+        const tower3 = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 2), matYellow); tower3.position.set(-4, 22, 4);
+        const tower4 = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 2), matYellow); tower4.position.set(4, 22, 4);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 10), matYellow); top.position.y = 33;
+        
+        // Lança estendida (Boom)
+        const boom = new THREE.Mesh(new THREE.BoxGeometry(50, 2, 4), matYellow);
+        boom.position.set(15, 25, 0); // Projetado pesadamente pra frente (+X)
 
-        const cabinGeo = new THREE.BoxGeometry(3, 3, 3);
-        const cabinMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-        const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-        cabin.position.set(2, 17, 3);
+        // Cabos de aço descendo e Spreader
+        const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 15), matDark); cable.position.set(30, 17.5, 0);
+        const spreader = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.5, 12), matDark); spreader.position.set(30, 10, 0);
+        
+        // Cabine do Operador
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshLambertMaterial({color: 0xffffff}));
+        cabin.position.set(6, 21, 5);
 
-        mesh.add(tower);
-        mesh.add(arm);
-        mesh.add(cabin);
+        mesh.add(leg1, leg2, leg3, leg4, beam, tower1, tower2, tower3, tower4, top, boom, cable, spreader, cabin);
     }
     return mesh;
 }
@@ -2294,7 +2309,22 @@ function onPointerMove(event) {
     }
 }
 
+let pointerDownPos = { x: 0, y: 0 };
+
 function onPointerDown(event) {
+    if (event.button !== 0 && event.pointerType === 'mouse') return; // Apenas botão principal/toque
+    pointerDownPos.x = event.clientX;
+    pointerDownPos.y = event.clientY;
+}
+
+function onPointerUp(event) {
+    if (event.button !== 0 && event.pointerType === 'mouse') return;
+
+    // Se o mouse moveu muito entre o Click e o Release, foi um "Drag" (Orbitando a câmera!)
+    const dx = Math.abs(event.clientX - pointerDownPos.x);
+    const dy = Math.abs(event.clientY - pointerDownPos.y);
+    if (dx > 5 || dy > 5) return; 
+
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
