@@ -178,6 +178,11 @@ const ui = {
     structureRotation: document.getElementById('structureRotation'),
     valStructureRotation: document.getElementById('valStructureRotation'),
     addPier: document.getElementById('addPier'),
+    addLargePier: document.getElementById('addLargePier'),
+    addLightPost: document.getElementById('addLightPost'),
+    addWarehouse: document.getElementById('addWarehouse'),
+    addContainer: document.getElementById('addContainer'),
+    addShiploader: document.getElementById('addShiploader'),
     addBollard: document.getElementById('addBollard'),
     clearPort: document.getElementById('clearPort'),
     maneuverName: document.getElementById('maneuverName'),
@@ -1836,7 +1841,7 @@ function checkCollisions() {
         }
     }
 
-    portElements.filter(el => el.type === 'pier').forEach(pierEl => {
+    portElements.filter(el => el.type === 'pier' || el.type === 'largepier').forEach(pierEl => {
         pierEl.mesh.updateWorldMatrix(true, false);
         if (!pierEl.mesh.geometry.boundingBox) pierEl.mesh.geometry.computeBoundingBox();
         const pierBox = pierEl.mesh.geometry.boundingBox.clone();
@@ -2087,6 +2092,11 @@ function setupConstructionControls() {
     });
 
     ui.addPier.addEventListener('click', () => startPlacement('pier'));
+    ui.addLargePier.addEventListener('click', () => startPlacement('largepier'));
+    ui.addLightPost.addEventListener('click', () => startPlacement('lightpost'));
+    ui.addWarehouse.addEventListener('click', () => startPlacement('warehouse'));
+    ui.addContainer.addEventListener('click', () => startPlacement('container'));
+    ui.addShiploader.addEventListener('click', () => startPlacement('shiploader'));
     ui.addBollard.addEventListener('click', () => startPlacement('bollard'));
     ui.clearPort.addEventListener('click', clearPort);
     const clearLevelsBtn = document.getElementById('clearLevelsBtn');
@@ -2120,15 +2130,23 @@ function startPlacement(type) {
     cancelPlacement();
     placementMode = type;
 
-    let geometry, material;
-    if (type === 'pier') {
-        geometry = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
-        material = new THREE.MeshStandardMaterial({ color: 0x605040, transparent: true, opacity: 0.6 });
-    } else { // bollard
-        geometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
-        material = new THREE.MeshStandardMaterial({ color: 0x404040, transparent: true, opacity: 0.6 });
+    const dummyMesh = createPortObjectMesh(type, constructionSettings.elevation);
+    if(dummyMesh.isGroup) {
+        dummyMesh.traverse(child => {
+            if(child.isMesh) {
+                child.material = child.material.clone();
+                child.material.transparent = true;
+                child.material.opacity = 0.6;
+            }
+        });
+        ghostObject = dummyMesh;
+    } else {
+        dummyMesh.material = dummyMesh.material.clone();
+        dummyMesh.material.transparent = true;
+        dummyMesh.material.opacity = 0.6;
+        ghostObject = dummyMesh;
     }
-    ghostObject = new THREE.Mesh(geometry, material);
+    
     ghostObject.rotation.y = THREE.MathUtils.degToRad(constructionSettings.rotation);
     scene.add(ghostObject);
 }
@@ -2136,23 +2154,88 @@ function startPlacement(type) {
 function cancelPlacement() {
     if (ghostObject) {
         scene.remove(ghostObject);
-        ghostObject.geometry.dispose();
-        ghostObject.material.dispose();
+        ghostObject.traverse(child => {
+            if (child.isMesh) {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+        });
         ghostObject = null;
     }
     placementMode = null;
 }
 
 function createPortObjectMesh(type, elevation) {
-    let geometry, material;
+    let mesh;
     if (type === 'pier') {
-        geometry = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
-        material = new THREE.MeshStandardMaterial({ color: 0x605040 });
-    } else { // bollard
-        geometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
-        material = new THREE.MeshStandardMaterial({ color: 0x404040 });
+        const geometry = new RoundedBoxGeometry(8, 1.5, 40, 2, 0.2);
+        const material = new THREE.MeshStandardMaterial({ color: 0x605040 });
+        mesh = new THREE.Mesh(geometry, material);
+    } else if (type === 'largepier') {
+        const geometry = new RoundedBoxGeometry(25, 2.5, 150, 4, 0.3);
+        const material = new THREE.MeshStandardMaterial({ color: 0x555555 });
+        mesh = new THREE.Mesh(geometry, material);
+    } else if (type === 'bollard') {
+        const geometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
+        const material = new THREE.MeshStandardMaterial({ color: 0x404040 });
+        mesh = new THREE.Mesh(geometry, material);
+    } else if (type === 'lightpost') {
+        mesh = new THREE.Group();
+        const poleGeo = new THREE.CylinderGeometry(0.1, 0.15, 8, 8);
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.y = 4;
+        
+        const lampGeo = new THREE.BoxGeometry(0.6, 0.2, 0.4);
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, emissive: 0xffcf00, emissiveIntensity: 1.0 });
+        const lamp = new THREE.Mesh(lampGeo, lampMat);
+        lamp.position.set(0.4, 8, 0);
+        
+        mesh.add(pole);
+        mesh.add(lamp);
+    } else if (type === 'warehouse') {
+        mesh = new THREE.Group();
+        const baseGeo = new THREE.BoxGeometry(30, 10, 20);
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0xd9e3f0 });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        base.position.y = 5;
+        
+        const roofGeo = new THREE.ConeGeometry(18, 3, 4); // Piramide de 4 lados
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x2b467a });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.rotation.y = Math.PI / 4;
+        roof.scale.set(1.2, 1, 0.85); // Estica para cobrir a base 30x20
+        roof.position.y = 11.5;
+        
+        mesh.add(base);
+        mesh.add(roof);
+    } else if (type === 'container') {
+        const colors = [0x8b0000, 0x00008b, 0x006400, 0xff8c00];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const geo = new THREE.BoxGeometry(2.44, 2.6, 12.0); // FEU
+        const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 });
+        mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 1.3;
+    } else if (type === 'shiploader') {
+        mesh = new THREE.Group();
+        const towerGeo = new THREE.BoxGeometry(4, 25, 4);
+        const towerMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+        const tower = new THREE.Mesh(towerGeo, towerMat);
+        tower.position.y = 12.5;
+
+        const armGeo = new THREE.BoxGeometry(40, 2, 2);
+        const arm = new THREE.Mesh(armGeo, towerMat);
+        arm.position.set(15, 20, 0);
+
+        const cabinGeo = new THREE.BoxGeometry(3, 3, 3);
+        const cabinMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+        cabin.position.set(2, 17, 3);
+
+        mesh.add(tower);
+        mesh.add(arm);
+        mesh.add(cabin);
     }
-    const mesh = new THREE.Mesh(geometry, material);
     return mesh;
 }
 
@@ -2201,8 +2284,12 @@ function onPointerMove(event) {
 
         if (placementMode === 'pier') {
             ghostObject.position.y = constructionSettings.elevation - 0.75;
+        } else if (placementMode === 'largepier') {
+            ghostObject.position.y = constructionSettings.elevation - 1.25;
         } else if (placementMode === 'bollard') {
             ghostObject.position.y = constructionSettings.elevation + 0.4;
+        } else {
+            ghostObject.position.y = constructionSettings.elevation;
         }
     }
 }
