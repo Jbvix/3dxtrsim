@@ -14,6 +14,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 import { Ship } from './entities/Ship.js';
 import { Tugboat } from './entities/Tugboat.js';
+import { HudJoystickController } from './ui/HudJoystick.js';
 
 // ====================== VARIÁVEIS GLOBAIS E CONFIGURAÇÕES ======================
 
@@ -2402,3 +2403,38 @@ window.switchSubTab = function(tabId, parentId) {
         activeBtn.style.fontWeight = 'bold';
     }
 };
+
+// ====================== HUD JOYSTICKS INIT ======================
+const hudBB = new HudJoystickController('hud-canvas-bb', 'hud-rpm-bb', 'hud-couple-bb', 'port', asdControls);
+const hudBE = new HudJoystickController('hud-canvas-be', 'hud-rpm-be', 'hud-couple-be', 'starboard', asdControls);
+
+document.getElementById('btn-toggle-hud')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const bbPanel = document.getElementById('hud-joystick-bb');
+    const bePanel = document.getElementById('hud-joystick-be');
+    const isHidden = bbPanel.classList.contains('hidden');
+    
+    if (isHidden) {
+        bbPanel.classList.remove('hidden');
+        bePanel.classList.remove('hidden');
+        // Usar currentTarget ou buscar o botão pelo id para ficar brilhoso
+        document.getElementById('btn-toggle-hud').classList.add('active');
+        
+        // Fecha o painel tradicional (ASD pop-up) para não sobrepor inputs se estiver aberto
+        if (window.asdPanel && window.asdPanel.isOpen()) {
+            window.asdPanel.close();
+        }
+        document.querySelector('.sidebar-btn[data-panel-id="panel-asd-2d"]')?.classList.remove('active');
+    } else {
+        bbPanel.classList.add('hidden');
+        bePanel.classList.add('hidden');
+        document.getElementById('btn-toggle-hud').classList.remove('active');
+    }
+});
+
+// Listener secundario para fechar o HUD automaticamente se o usuario clicar abertamente no Controle ASD classico
+document.querySelector('.sidebar-btn[data-panel-id="panel-asd-2d"]')?.addEventListener('click', () => {
+    document.getElementById('hud-joystick-bb')?.classList.add('hidden');
+    document.getElementById('hud-joystick-be')?.classList.add('hidden');
+    document.getElementById('btn-toggle-hud')?.classList.remove('active');
+});

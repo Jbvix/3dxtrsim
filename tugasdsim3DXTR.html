@@ -457,6 +457,7 @@
 
     <div id="right-sidebar">
         <button class="sidebar-btn active" data-panel-id="panel-asd-2d" title="Controles ASD"><i data-lucide="gamepad-2"></i></button>
+        <button class="sidebar-btn" id="btn-toggle-hud" title="Ativar HUD Joysticks na Tela"><i data-lucide="joystick"></i></button>
         <button class="sidebar-btn" data-panel-id="panel-ship-helm" title="Governo do Navio"><i data-lucide="ship"></i></button>
         <button class="sidebar-btn" data-panel-id="debug-log-panel" title="Logs Matemáticos"><i data-lucide="calculator"></i></button>
         <button class="sidebar-btn" data-panel-id="panel-mooring" title="Atracação"><i data-lucide="anchor"></i></button>
@@ -472,6 +473,25 @@
     <script>
         lucide.createIcons();
     </script>
+    
+    <!-- HUD Joystick Overlays -->
+    <div id="hud-joystick-bb" class="hud-joystick-panel hidden" style="left: 20px;">
+        <div class="hud-header">BOMBORDO (BB)</div>
+        <div class="hud-body">
+            <canvas id="hud-canvas-bb" width="130" height="130"></canvas>
+            <input type="range" id="hud-rpm-bb" class="hud-vertical-slider" min="0" max="100" step="1" value="0" disabled>
+        </div>
+        <button id="hud-couple-bb" class="hud-clutch-btn off">🔴 DESACOPLADO</button>
+    </div>
+
+    <div id="hud-joystick-be" class="hud-joystick-panel hidden" style="right: 20px;">
+        <div class="hud-header">ESTIBORDO (BE)</div>
+        <div class="hud-body">
+            <input type="range" id="hud-rpm-be" class="hud-vertical-slider" min="0" max="100" step="1" value="0" disabled>
+            <canvas id="hud-canvas-be" width="130" height="130"></canvas>
+        </div>
+        <button id="hud-couple-be" class="hud-clutch-btn off">🔴 DESACOPLADO</button>
+    </div>
 </div>
 
 <script type="importmap">

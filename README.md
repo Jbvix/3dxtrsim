@@ -1,4 +1,4 @@
-# ⚓ CoastalBrasil ASD TUG SIMULATOR (v3.4)
+# ⚓ CoastalBrasil ASD TUG SIMULATOR (v3.5)
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/378d4ef0-77ec-4eda-9b9c-1687921ca5b4/deploy-status)](https://app.netlify.com/projects/3dxtrsim/deploys)
 > **Laboratório Hidrodinâmico Digital de Rebocadores Azimuth Stern Drive.**
@@ -18,10 +18,12 @@ A arquitetura do CoastalBrasil ASD Simulator elimina dependências de "Caixas Pr
 *   **TailwindCSS** (Estilo paramétrico fluído dos painéis da Landing Page).
 *   **Netlify Edge Hosting** (Ambiente Seguro com Proteções Globais e Anti-Hotlinking no Nível 2).
 
-### 💡 Funcionalidades Principais (Release 3.4)
+### 💡 Funcionalidades Principais (Release 3.5)
 
+*   **Construtor Portuário Sandbox Expandido:** Adição de ferramentas de criação de cenários modulares estendidas no próprio navegador, incluindo Cais Gigantescos (150m+), Guindastes Logísticos STS (Ship-to-Shore), Armazéns (Hangares), Containers Procedurais e Postes de Luz com emissão inteligente GPU-Friendly. Apresentando também navegação orbital 100% livre durante a obra.
+*   **Licenciamento Acadêmico Copyleft (CC BY-NC-SA 4.0):** Atualizado do clássico MIT para a rigidez do Creative Commons para coibir o enclausuramento (fechamento por corporações) e evitar exploração comercial sem autorização, garantindo que as comunidades abertas tenham acesso irrestrito eterno e contínuo.
 *   **Twin-Simulation Independente:** Domínio total sobre os manetes de um poderoso rebocador ASD e comutação instantânea para o passadiço independente de um **Navio Cargueiro de +60.000 Toneladas**.
-*   **Atracação e Choque Analítico (Hooke's Law):** Cabos vetoriais reagem com rigor acadêmico limitando Força de Ruptura (*Breaking Load em Tensões T/kN*), Rigidez e Amortecimento. E colisões detectadas via caixas AABB entre píeres, barcos e boias navais que simulam perdas de energia natural.
+*   **Atracação e Choque Analítico (Hooke's Law):** Cabos vetoriais reagem com rigor acadêmico limitando Força de Ruptura (*Breaking Load em Tensões T/kN*), Rigidez e Amortecimento. E colisões detectadas via caixas AABB entre píeres fixos, navios pesados e construções que simulam transferências inelásticas de energia com perdas naturais.
 *   **Integração Atmosférica Paramétrica:** Ventos em cruzamento vetorial puro de até 50 Nós e Correntes Hidrodinâmicas tridimensionais atuando na força de atrito e *yaw* (guinada rotacional) do navio sob peso pesado.
 *   **Matrizes Visuais:** Órbita tridimensional de câmeras inteligentes que se auto-reconfiguram usando matrizes trigonométricas dependendo das escalas entre rebocador ($15m$) ou supercargueiros ($~200m$). E repintura total através de heurísticas de malhas PBR.
 
