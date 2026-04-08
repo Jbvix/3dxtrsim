@@ -2312,21 +2312,38 @@ function placeObject(position) {
 
 function clearPort() {
     portElements.forEach(el => {
-        scene.remove(el.mesh);
-        el.mesh.traverse((child) => {
-            if (child.isMesh) {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(m => m.dispose());
-                    } else {
-                        child.material.dispose();
+        try {
+            if (el.mesh) {
+                scene.remove(el.mesh);
+                el.mesh.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.geometry && typeof child.geometry.dispose === 'function') {
+                            child.geometry.dispose();
+                        }
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(m => {
+                                    if (m && typeof m.dispose === 'function') m.dispose();
+                                });
+                            } else {
+                                if (typeof child.material.dispose === 'function') {
+                                    child.material.dispose();
+                                }
+                            }
+                        }
                     }
-                }
+                });
             }
-        });
+        } catch (err) {
+            console.warn("Aviso ao limpar objeto do porto: ", err);
+        }
     });
     portElements = [];
+
+    // Limpa também o modo de construção se houver fantasmas presos
+    if (isConstructionMode) {
+        cancelPlacement();
+    }
 }
 
 
