@@ -17,6 +17,7 @@ export class HudJoystickController {
         
         this.isDragging = false;
         this.isActive = false; // Começa desligado
+        this.activePointerId = null;
         
         this._initListeners();
         this.animate = this.animate.bind(this);
@@ -34,6 +35,7 @@ export class HudJoystickController {
         this.canvas.addEventListener('pointerdown', this._onDown.bind(this));
         window.addEventListener('pointermove', this._onMove.bind(this));
         window.addEventListener('pointerup', this._onUp.bind(this));
+        window.addEventListener('pointercancel', this._onUp.bind(this));
         
         this.rpmSlider.addEventListener('input', (e) => {
             if (this.isActive) {
@@ -71,18 +73,22 @@ export class HudJoystickController {
     _onDown(e) {
         if (!this.isActive) return;
         this.isDragging = true;
+        this.activePointerId = e.pointerId;
+        try { this.canvas.setPointerCapture(e.pointerId); } catch(err) {}
         this._updateControl(e);
     }
 
     _onMove(e) {
-        if (this.isDragging && this.isActive) {
+        if (this.isDragging && this.isActive && e.pointerId === this.activePointerId) {
             this._updateControl(e);
         }
     }
 
-    _onUp() {
-        if (this.isDragging) {
+    _onUp(e) {
+        if (this.isDragging && e.pointerId === this.activePointerId) {
             this.isDragging = false;
+            this.activePointerId = null;
+            try { this.canvas.releasePointerCapture(e.pointerId); } catch(err) {}
         }
     }
     

@@ -1019,16 +1019,48 @@ function setupUIEvents() {
     document.getElementById('viewStarboard').addEventListener('click', () => setCameraView('starboard'));
     document.getElementById('viewOrbit').addEventListener('click', () => setCameraView('orbit'));
 
+    document.getElementById('btnZoomIn')?.addEventListener('click', () => {
+        if (camera) {
+            camera.zoom *= 1.2;
+            camera.updateProjectionMatrix();
+        }
+    });
+
+    document.getElementById('btnZoomOut')?.addEventListener('click', () => {
+        if (camera) {
+            camera.zoom /= 1.2;
+            if (camera.zoom < 0.1) camera.zoom = 0.1;
+            camera.updateProjectionMatrix();
+        }
+    });
+
+    document.getElementById('focusUniversal')?.addEventListener('click', () => {
+        cameraTargetEntity = 'universal';
+        document.getElementById('focusUniversal').classList.replace('btn-sec', 'btn-success');
+        document.getElementById('focusTug')?.classList.replace('btn-success', 'btn-sec');
+        document.getElementById('focusShip')?.classList.replace('btn-success', 'btn-sec');
+        setCameraView('orbit');
+        if (controls) {
+            controls.target.set(0, 0, 0);
+        }
+        if (camera) {
+            camera.position.set(0, 150, 150);
+        }
+        if (controls) controls.update();
+    });
+
     document.getElementById('focusTug')?.addEventListener('click', () => {
         cameraTargetEntity = 'tug';
         document.getElementById('focusTug').classList.replace('btn-sec', 'btn-success');
-        document.getElementById('focusShip').classList.replace('btn-success', 'btn-sec');
+        document.getElementById('focusShip')?.classList.replace('btn-success', 'btn-sec');
+        document.getElementById('focusUniversal')?.classList.replace('btn-success', 'btn-sec');
     });
 
     document.getElementById('focusShip')?.addEventListener('click', () => {
         cameraTargetEntity = 'ship';
-        document.getElementById('focusShip').classList.replace('btn-sec', 'btn-success');
-        document.getElementById('focusTug').classList.replace('btn-success', 'btn-sec');
+        document.getElementById('focusShip')?.classList.replace('btn-sec', 'btn-success');
+        document.getElementById('focusTug')?.classList.replace('btn-success', 'btn-sec');
+        document.getElementById('focusUniversal')?.classList.replace('btn-success', 'btn-sec');
     });
 
     const tugColorPicker = document.getElementById('tugColorPicker');
@@ -1913,6 +1945,11 @@ function checkCollisions() {
 }
 
 function updateCamera(dt) {
+    if (cameraTargetEntity === 'universal') {
+        controls.update();
+        return;
+    }
+
     let focusGroup = cgPivot; // Default Tug
     let scaleH = 1.0;
     let scaleV = 1.0;
@@ -2421,10 +2458,14 @@ document.getElementById('btn-toggle-hud')?.addEventListener('click', (e) => {
         document.getElementById('btn-toggle-hud').classList.add('active');
         
         // Fecha o painel tradicional (ASD pop-up) para não sobrepor inputs se estiver aberto
-        if (window.asdPanel && window.asdPanel.isOpen()) {
+        const asdPanel2D = document.getElementById('panel-asd-2d');
+        if (asdPanel2D) asdPanel2D.style.display = 'none';
+        document.querySelector('.sidebar-btn[data-panel-id="panel-asd-2d"]')?.classList.remove('active');
+
+        // Para evitar conflito com painéis baseados em iframe, caso existam:
+        if (window.asdPanel && window.asdPanel.isOpen && window.asdPanel.isOpen()) {
             window.asdPanel.close();
         }
-        document.querySelector('.sidebar-btn[data-panel-id="panel-asd-2d"]')?.classList.remove('active');
     } else {
         bbPanel.classList.add('hidden');
         bePanel.classList.add('hidden');
