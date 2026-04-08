@@ -71,6 +71,10 @@
                     class="tab-button text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
                     <i class="fa-solid fa-graduation-cap mr-2"></i> Módulos de Escalada
                 </button>
+                <button data-target="atualizacoes"
+                    class="tab-button text-xl font-medium pb-2 text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-bullhorn mr-2"></i> Atualizações do Simulador
+                </button>
             </nav>
 
             <div id="tab-content">
@@ -184,6 +188,33 @@
                                 <p class="text-slate-400">Lide com arrasto inercial brutal tentando amarrar na popa do
                                     cargueiro pesado de +60.000 Tons atracado.</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="atualizacoes" class="content-panel">
+                    <div class="max-w-4xl mx-auto space-y-4">
+                        <div class="glass-card rounded-2xl p-6 border-l-4 border-cyan-400">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-xl font-bold text-white">Versão 3.5.1</h3>
+                                <span class="text-cyan-400 text-sm font-semibold tracking-wider bg-cyan-900/30 px-2 py-0.5 rounded">RECENTE</span>
+                            </div>
+                            <ul class="text-slate-300 list-disc list-inside space-y-1 mt-3 text-sm marker:text-cyan-500">
+                                <li><strong>Prevenção HUD vs Janela:</strong> Painéis de controle de propulsão são mutuamente exclusivos, evitando a sobreposição de elementos ASD.</li>
+                                <li><strong>Isolamento Multi-touch:</strong> Resolvida a interferência vetorial ao pilotar independentemente BB e BE pelo arrasto na tela.</li>
+                                <li><strong>Zoom Focal:</strong> Adicionados botões dedicados de "Zoom In" / "Zoom Out" ajustando o FOV na lente nativa.</li>
+                                <li><strong>Câmera Livre:</strong> Estabelecido o novo Foco "Órbita Universal" que permite varrer toda a cena sem ancoragem no casco.</li>
+                            </ul>
+                        </div>
+                        <div class="glass-card rounded-2xl p-6 border-l-4 border-slate-600 opacity-80">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-xl font-bold text-slate-300">Versão 3.5.0</h3>
+                                <span class="text-slate-500 text-sm font-mono">Abril / 2026</span>
+                            </div>
+                            <ul class="text-slate-400 list-disc list-inside space-y-1 mt-3 text-sm">
+                                <li>Lançamento do painel flutuante de Joystick Overlay Glassmorphism.</li>
+                                <li>Limpeza da arquitetura WordPress. Arquitetura 3DXTR Engine limpa e isolada no repositório.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
