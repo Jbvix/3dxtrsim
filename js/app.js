@@ -206,8 +206,9 @@ function init() {
     scene.background = new THREE.Color(0x7ec0ee); // Céu claro diurno
     clock = new THREE.Clock();
 
-    camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
-    camera.position.set(20, 15, 20);
+    // Vista aérea levemente inclinada enquadra rebocador (0,0,0) e navio (50,y,-30) juntos
+    camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 2000);
+    camera.position.set(25, 200, 80);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(innerWidth, innerHeight);
@@ -219,6 +220,9 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    // Ponto de interesse: entre rebocador (0,0,0) e navio (50,0,-30)
+    controls.target.set(25, 0, -15);
+    controls.update();
 
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x1da2d8, metalness: .6, roughness: .2 }));
     sea.rotation.x = -Math.PI / 2;
