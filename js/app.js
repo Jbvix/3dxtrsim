@@ -1839,41 +1839,43 @@ function checkCollisions() {
             // Converte a normal Local de volta para o Mundo real (respeitando a rotação do navio)
             const normalWorld = normalLocal.applyQuaternion(shipGroup.quaternion).normalize();
 
-            // Aplica Resolução Posicional Estrita (Oculta a parede invisível!)
-            tugState.position.add(normalWorld.clone().multiplyScalar(penetration));
+            // Aplica Resolução Posicional com limite máximo por frame (evita pulos)
+            const posCorrection = Math.min(penetration, 0.5);
+            tugState.position.add(normalWorld.clone().multiplyScalar(posCorrection));
 
-            // Componente de Velocidade (Bouncing e Transferência de Empuxo/Momento)
+            // Componente de Velocidade
             const velDot = tugState.velocity.dot(normalWorld);
-            if (velDot < 0) { 
-                // Rebocador bate secando o momento dele contra o casco (Bouncing inelástico)
-                const tugBounceImpulse = normalWorld.clone().multiplyScalar(Math.abs(velDot) * 1.4);
+            if (velDot < 0) {
+                // Fender de borracha: colisão quase totalmente inelástica (restitution = 0.05)
+                // O rebocador NAO quica - a energia é absorvida pelo fender
+                const restitution = 0.05;
+                const tugBounceImpulse = normalWorld.clone().multiplyScalar(Math.abs(velDot) * (1.0 + restitution));
                 tugState.velocity.add(tugBounceImpulse);
-                
-                // Repassa o impacto mecânico para o navio! (Empurrar para valer)
-                // O multiplicador ajustado para translação linear forte (Aumentado para 100.0)
-                const shipImpulseMagnitude = ((Math.abs(velDot) * physics.mass) / shipPhysics.mass) * 100.0;
-                
-                // Terceira Lei de Newton (Ação e Reação): 
-                // A 'normalWorld' aponta para FORA do navio. Para empurrar o navio, aplicamos a energia ao CONTRÁRIO (-)
+
+                // Transferência de impulso para o navio: f = (m_tug / m_ship) * |velDot|
+                // Multiplicador pequeno (0.8) para força proporcional realista
+                const shipImpulseMagnitude = ((Math.abs(velDot) * physics.mass) / shipPhysics.mass) * 0.8;
                 const pushVector = normalWorld.clone().multiplyScalar(-shipImpulseMagnitude);
                 shipState.velocity.add(pushVector);
 
-                // Transferência de Torque (Girar o navio ao empurrar na proa ou popa!)
-                // Alavanca = Posição do Rebocador - Centro do Navio
+                // Transferência de Torque (Girar o navio ao empurrar na proa ou popa)
                 const rShip = new THREE.Vector3().subVectors(tugWorldPos, shipState.position);
-                // Produto vetorial 2D pseudo-torque: Força em X girando em Z, e vice-versa
-                // O impulso está divido na massa, então multiplicamos pela massa do navio de volta para virar Força (Impulso Angular real)
                 const forceApplied = pushVector.clone().multiplyScalar(shipPhysics.mass);
                 const pushTorque = (rShip.z * forceApplied.x) - (rShip.x * forceApplied.z);
-                
-                // Giro muito lento (simulando 10M Kg). A força nas pontas gira vagarosamente.
-                // Usamos uma escala em torno de 400.0 como amortecedor de momento angular
                 shipState.yawRate += ((pushTorque / 400.0) / shipPhysics.momentOfInertia);
-                
-                // ATRITO DA BORRACHA (Fender Friction)
-                // Se o rebocador está empurrando contra a parede de aço, a defensa de borracha "morde" o casco
-                // e estabiliza firmemente a rotação. Cortamos drasticamente o Yaw momentâneo do rebocador aqui:
-                tugState.yawRate *= 0.70; 
+
+                // Atrito da Borracha — amortece o yaw do rebocador no contato
+                tugState.yawRate *= 0.85;
+
+            } else {
+                // Rebocador em contato sustentado (empurrando): aplica força contínua suave
+                // sem bouncing, proporcional ao thrust que ele está aplicando
+                const sustainedPushSpeed = Math.max(0, tugState.velocity.dot(normalWorld.clone().negate()));
+                if (sustainedPushSpeed > 0.001) {
+                    const sustainedImpulse = ((sustainedPushSpeed * physics.mass) / shipPhysics.mass) * 1.2;
+                    const sustainedPush = normalWorld.clone().multiplyScalar(-sustainedImpulse);
+                    shipState.velocity.add(sustainedPush);
+                }
             }
         }
     }
