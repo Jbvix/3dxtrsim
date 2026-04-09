@@ -206,9 +206,9 @@ function init() {
     scene.background = new THREE.Color(0x7ec0ee); // Céu claro diurno
     clock = new THREE.Clock();
 
-    // Vista aérea levemente inclinada enquadra rebocador (0,0,0) e navio (50,y,-30) juntos
-    camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 2000);
-    camera.position.set(25, 200, 80);
+    // Câmera aérea aão lado: enquadra rebocador (0,0,0) e navio (40,y,-20) juntos
+    camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 2000);
+    camera.position.set(50, 120, 80);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(innerWidth, innerHeight);
@@ -220,8 +220,7 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    // Ponto de interesse: entre rebocador (0,0,0) e navio (50,0,-30)
-    controls.target.set(25, 0, -15);
+    controls.target.set(20, 0, -10);
     controls.update();
 
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x1da2d8, metalness: .6, roughness: .2 }));
@@ -538,7 +537,7 @@ function loadCargoShip() {
         // Elevação de 40% solicitada pelo usuário (Salva como BASE pra servir de referencia ancorada no Calado)
         shipState.baseY = size.y * 0.4;
         shipState.position.y = shipState.baseY;
-        shipGroup.position.set(50, shipState.position.y, -30);
+        shipGroup.position.set(40, shipState.position.y, -20);
         shipGroup.rotation.y = -Math.PI / 6; // Ângulo para facilitar as abordagens
 
         scene.add(shipGroup);
@@ -596,7 +595,9 @@ function loadCargoShip() {
     };
 
     loader.load(modelPath, (gltf) => {
-        onModelLoad(gltf.scene);
+        const ship = gltf.scene;
+        ship.scale.set(0.3, 0.3, 0.3); // Escala o modelo para o espaço da cena
+        onModelLoad(ship);
     }, undefined, (err) => {
         console.error('ERRO AO CARREGAR O NAVIO:', err);
     });
