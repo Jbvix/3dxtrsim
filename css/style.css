@@ -453,8 +453,8 @@
       transition: opacity 0.3s;
   }
   input[type="range"].hud-vertical-slider {
-      -webkit-appearance: slider-vertical;
-      appearance: slider-vertical;
+      writing-mode: vertical-lr;
+      direction: rtl;
       width: 20px;
       height: 120px;
       background: rgba(0, 0, 0, 0.4);
@@ -464,11 +464,13 @@
       padding: 0;
       margin: 0;
       transition: opacity 0.3s;
+      cursor: pointer;
   }
   input[type="range"].hud-vertical-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      height: 14px;
-      width: 24px;
+      appearance: none;
+      height: 24px;
+      width: 14px;
       border-radius: 6px;
       background: linear-gradient(145deg, #1e90ff, #0a58ca);
       cursor: grab;
