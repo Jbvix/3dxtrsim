@@ -595,9 +595,7 @@ function loadCargoShip() {
     };
 
     loader.load(modelPath, (gltf) => {
-        const ship = gltf.scene;
-        ship.scale.set(0.3, 0.3, 0.3); // Escala o modelo para o espaço da cena
-        onModelLoad(ship);
+        onModelLoad(gltf.scene);
     }, undefined, (err) => {
         console.error('ERRO AO CARREGAR O NAVIO:', err);
     });
