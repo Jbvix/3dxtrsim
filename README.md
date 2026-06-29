@@ -21,7 +21,7 @@ A arquitetura do CoastalBrasil ASD Simulator elimina dependências de "Caixas Pr
 ### 💡 Funcionalidades Principais (Release 3.5)
 
 *   **Construtor Portuário Sandbox Expandido:** Adição de ferramentas de criação de cenários modulares estendidas no próprio navegador, incluindo Cais Gigantescos (150m+), Guindastes Logísticos STS (Ship-to-Shore), Armazéns (Hangares), Containers Procedurais e Postes de Luz com emissão inteligente GPU-Friendly. Apresentando também navegação orbital 100% livre durante a obra.
-*   **Licenciamento Acadêmico Copyleft (CC BY-NC-SA 4.0):** Atualizado do clássico MIT para a rigidez do Creative Commons para coibir o enclausuramento (fechamento por corporações) e evitar exploração comercial sem autorização, garantindo que as comunidades abertas tenham acesso irrestrito eterno e contínuo.
+*   **Licenciamento Acadêmico:** Padronizado para Creative Commons Attribution-NonCommercial 4.0 para coibir uso comercial sem autorização.
 *   **Twin-Simulation Independente:** Domínio total sobre os manetes de um poderoso rebocador ASD e comutação instantânea para o passadiço independente de um **Navio Cargueiro de +60.000 Toneladas**.
 *   **Atracação e Choque Analítico (Hooke's Law):** Cabos vetoriais reagem com rigor acadêmico limitando Força de Ruptura (*Breaking Load em Tensões T/kN*), Rigidez e Amortecimento. E colisões detectadas via caixas AABB entre píeres fixos, navios pesados e construções que simulam transferências inelásticas de energia com perdas naturais.
 *   **Integração Atmosférica Paramétrica:** Ventos em cruzamento vetorial puro de até 50 Nós e Correntes Hidrodinâmicas tridimensionais atuando na força de atrito e *yaw* (guinada rotacional) do navio sob peso pesado.
@@ -62,3 +62,14 @@ Qualquer anomalia no comportamento do rebocador e sugestão de melhorias:
 *   **Correio Eletrônico:** [jossiancosta@gmail.com](mailto:jossiancosta@gmail.com)
 
 > _"A ciência dos oceanos transformada em precisão digital. A ponte entre teorias náuticas e passadiços virtuais."_
+
+## Licença e Copyright
+
+**Copyright (c) 2026 Jossian Brito**
+
+Este projeto é licenciado sob a **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.
+
+- Uso comercial não é permitido sem autorização expressa prévia do autor.
+- A atribuição ao autor original é obrigatória.
+
+O texto completo da licença está no arquivo [LICENSE](LICENSE).
